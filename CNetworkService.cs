@@ -36,7 +36,11 @@ namespace SocketServer {
         }
 
         private void receiveComplete(object sender, SocketAsyncEventArgs e) {
-            throw new NotImplementedException();
+            if (e.LastOperation == SocketAsyncOperation.Receive) {
+                processReceive(e);
+            } else {
+                throw new ArgumentException("last operation completed on the socket was not a receive");
+            }
         }
 
         void onNewClient(Socket client, object token) {
@@ -48,11 +52,36 @@ namespace SocketServer {
 
         }
 
+        void processReceive(SocketAsyncEventArgs receiveArgs) {
+            CUserToken token = receiveArgs.UserToken as CUserToken;
+
+            if (receiveArgs.BytesTransferred > 0 && receiveArgs.SocketError == SocketError.Success) {
+                token.onReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
+
+                if (false == token.Socket.ReceiveAsync(receiveArgs)) {
+                    processReceive(receiveArgs);
+                }
+            } else {
+                Console.WriteLine("error {0}, transferred {1}", 
+                    receiveArgs.SocketError, 
+                    receiveArgs.BytesTransferred);
+                closeClientSocket(token);
+            }
+        }
+
+        void closeClientSocket(CUserToken token) {
+
+        }
+
         void beginReceive(Socket client, SocketAsyncEventArgs receiveArgs, SocketAsyncEventArgs sendArgs) {
             CUserToken token = receiveArgs.UserToken as CUserToken;
             token.Socket = client;
             token.SendEventArgs = sendArgs;
             token.ReceiveEventArgs = receiveArgs;
+
+            if (false == client.ReceiveAsync(receiveArgs)) {
+                processReceive(receiveArgs);
+            }
         }
 
         public void listen(string host, int port, int backlog) {

@@ -8,6 +8,10 @@ namespace SocketServer {
 
         public SocketAsyncEventArgs ReceiveEventArgs { private get; set; }
         public SocketAsyncEventArgs SendEventArgs { private get; set; }
-        public Socket Socket { private get; set; }
+        public Socket Socket { get; set; }
+
+        public void onReceive(byte[] buffer, int offset, int byteTransferred) {
+            
+        }
     }
 }
