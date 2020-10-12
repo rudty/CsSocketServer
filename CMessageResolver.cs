@@ -48,7 +48,30 @@ namespace SocketServer {
             int srcPosition = offset;
 
             while (remainBytes > 0) {
+                if (currentPosition < HEADERSIZE) {
+                    positionToRead = HEADERSIZE;
+                    if (false == readUntil(buffer, ref srcPosition, offset, transffered)) { 
+                        return;
+                    }
+
+
+                    messageSize = BitConverter.ToInt16(messageBuffer, 0);
+                    positionToRead = messageSize + HEADERSIZE;
+                }
+
+                if (readUntil(buffer, ref srcPosition, offset, transffered)) {
+                    callback(messageBuffer);
+                    clearBuffer();
+                }
             }
+        }
+
+        private void clearBuffer() {
+            for (int i = 0; i < HEADERSIZE; ++i) {
+                messageBuffer[i] = 0;
+            }
+            currentPosition = 0;
+            this.messageSize = 0;
         }
     }
 }

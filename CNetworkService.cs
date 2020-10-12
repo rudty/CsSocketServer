@@ -6,12 +6,16 @@ using System.Text;
 namespace SocketServer {
     class CNetworkService {
 
-        int maxConnections;
-        private SocketAsyncEventArgsPool receiveEventArgsPool;
-        private SocketAsyncEventArgsPool sendEventArgsPool;
-        private BufferManager bufferManager;
+        const int maxConnections = 10000;
+        private SocketAsyncEventArgsPool receiveEventArgsPool = new SocketAsyncEventArgsPool(maxConnections);
+        private SocketAsyncEventArgsPool sendEventArgsPool = new SocketAsyncEventArgsPool(maxConnections);
+        private BufferManager bufferManager = new BufferManager(maxConnections * 2, 1024);
 
-        CNetworkService() {
+        public delegate void SessionHandler(CUserToken token);
+        public SessionHandler SessonCreateCallback { get; set; }
+
+        public CNetworkService() {
+            bufferManager.InitBuffer();
             for (int i  = 0; i < maxConnections; ++i) {
                 CUserToken token = new CUserToken();
 
@@ -32,7 +36,8 @@ namespace SocketServer {
         }
 
         private void sendCompleted(object sender, SocketAsyncEventArgs e) {
-            throw new NotImplementedException();
+            var token = e.UserToken as CUserToken;
+            token.processSend(e);
         }
 
         private void receiveComplete(object sender, SocketAsyncEventArgs e) {
@@ -47,8 +52,12 @@ namespace SocketServer {
             SocketAsyncEventArgs receiveArgs = receiveEventArgsPool.Pop();
             SocketAsyncEventArgs sendArgs = receiveEventArgsPool.Pop();
 
-            //if (sessionCreatedCallback != null)
+            if (SessonCreateCallback != null) {
+                var t = receiveArgs.UserToken as CUserToken;
+                SessonCreateCallback.Invoke(t);
+            }
 
+            beginReceive(client, receiveArgs, sendArgs);
 
         }
 
@@ -70,7 +79,9 @@ namespace SocketServer {
         }
 
         void closeClientSocket(CUserToken token) {
-
+            token.onRemoved();
+            receiveEventArgsPool?.Push(token.ReceiveEventArgs);
+            sendEventArgsPool?.Push(token.SendEventArgs);
         }
 
         void beginReceive(Socket client, SocketAsyncEventArgs receiveArgs, SocketAsyncEventArgs sendArgs) {

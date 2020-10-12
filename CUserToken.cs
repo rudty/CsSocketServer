@@ -6,12 +6,20 @@ using System.Text;
 namespace SocketServer {
     class CUserToken {
 
-        public SocketAsyncEventArgs ReceiveEventArgs { private get; set; }
-        public SocketAsyncEventArgs SendEventArgs { private get; set; }
+        internal SocketAsyncEventArgs ReceiveEventArgs { get; set; }
+        internal SocketAsyncEventArgs SendEventArgs { get; set; }
         public Socket Socket { get; set; }
 
         public void onReceive(byte[] buffer, int offset, int byteTransferred) {
             
+        }
+
+        public void onRemoved() {
+
+        }
+
+        public void processSend(SocketAsyncEventArgs e) {
+
         }
     }
 }
