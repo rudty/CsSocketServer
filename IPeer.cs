@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SocketServer {
     public interface IPeer {
-        void onmessage(byte[] buffer);
+        void onMessage(byte[] buffer);
         void onRemoved();
         void send();
         void disconnect();
