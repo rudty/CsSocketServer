@@ -5,8 +5,6 @@ using System.Text;
 
 namespace SocketServer {
     class CMessageResolver {
-        const int HEADERSIZE = 2;
-
         public delegate void CompletedMessageCallback(byte[] buffer);
 
         int remainBytes = 0;
@@ -14,7 +12,7 @@ namespace SocketServer {
         int positionToRead = 0;
         int messageSize = 0;
 
-        byte[] messageBuffer = new byte[1024];
+        byte[] messageBuffer = new byte[Consts.MESSAGE_BUFFER_SIZE];
 
 
         bool readUntil(byte[] buffer, ref int srcPosition, int offset, int transffered) {
@@ -44,19 +42,19 @@ namespace SocketServer {
 
         public void onReceive(byte[] buffer, int offset, int transffered, CompletedMessageCallback callback) {
             this.remainBytes = transffered;
-        
+
             int srcPosition = offset;
 
             while (remainBytes > 0) {
-                if (currentPosition < HEADERSIZE) {
-                    positionToRead = HEADERSIZE;
-                    if (false == readUntil(buffer, ref srcPosition, offset, transffered)) { 
+                if (currentPosition < Consts.HEADER_SIZE) {
+                    positionToRead = Consts.HEADER_SIZE;
+                    if (false == readUntil(buffer, ref srcPosition, offset, transffered)) {
                         return;
                     }
 
 
                     messageSize = BitConverter.ToInt16(messageBuffer, 0);
-                    positionToRead = messageSize + HEADERSIZE;
+                    positionToRead = messageSize + Consts.HEADER_SIZE;
                 }
 
                 if (readUntil(buffer, ref srcPosition, offset, transffered)) {
@@ -67,7 +65,7 @@ namespace SocketServer {
         }
 
         private void clearBuffer() {
-            for (int i = 0; i < HEADERSIZE; ++i) {
+            for (int i = 0; i < Consts.HEADER_SIZE; ++i) {
                 messageBuffer[i] = 0;
             }
             currentPosition = 0;
