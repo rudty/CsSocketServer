@@ -13,12 +13,22 @@ namespace SocketServer {
 
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
 
-        public void onReceive(byte[] buffer, int offset, int byteTransferred) {
+        CMessageResolver messageResolver = new CMessageResolver();
 
+        public IPeer Peer { get; set; }
+
+
+        public void onReceive(byte[] buffer, int offset, int byteTransferred) {
+            messageResolver.onReceive(buffer, offset, byteTransferred, onMessage);
+        }
+
+        public void onMessage(byte[] buffer) {
+            Peer?.onMessage(buffer);
         }
 
         public void onRemoved() {
-
+            sendingQueue.Clear();
+            Peer?.onRemoved();
         }
 
         public void processSend(SocketAsyncEventArgs e) {
@@ -53,6 +63,15 @@ namespace SocketServer {
                     startSend();
                 }
             }
+        }
+
+        public void disconnect() {
+            try {
+                Socket.Shutdown(SocketShutdown.Send);
+            } catch {
+
+            }
+            Socket.Close();
         }
     }
 }
