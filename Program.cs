@@ -1,6 +1,28 @@
 ﻿using System;
 
 namespace SocketServer {
+    class MyPeer : IPeer {
+        void IPeer.disconnect() {
+            Console.WriteLine("disconnect");
+        }
+
+        void IPeer.onMessage(byte[] buffer) {
+            Console.WriteLine("onMessage");
+        }
+
+        void IPeer.onRemoved() {
+            Console.WriteLine("onRemoved");
+        }
+
+        void IPeer.processUserOperation() {
+            Console.WriteLine("processUserOperation");
+        }
+
+        void IPeer.send() {
+            Console.WriteLine("send");
+        }
+    }
+
     class Program {
         static void Main(string[] args) {
             Console.WriteLine("Hello World!");
@@ -14,6 +36,8 @@ namespace SocketServer {
 
         private static void onSessionCreated(CUserToken token) {
             Console.WriteLine(token);
+            token.Peer = new MyPeer();
         }
+
     }
 }

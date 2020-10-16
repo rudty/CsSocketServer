@@ -9,6 +9,13 @@ namespace SocketServer {
         public int Position { get; private set; } = Consts.HEADER_SIZE;
         public Int16 ProtocolId { get; private set; }
 
+        public CPacket()
+            : this(new byte[1024]) {
+        }
+
+        public CPacket(byte[] buf) {
+            Buffer = buf;
+        }
 
         public void recordSize() {
             Int16 s = (Int16)(Position - Consts.HEADER_SIZE);
@@ -16,10 +23,39 @@ namespace SocketServer {
             header.CopyTo(Buffer, 0);
         }
 
+        public void push(int data) {
+            var b = Buffer;
+            b[0] = (byte)(data);
+            b[1] = (byte)(data >> 8);
+            b[2] = (byte)(data >> 16);
+            b[3] = (byte)(data >> 24);
+
+            Position += sizeof(int);
+        }
+
+        public void push(byte data) {
+            var b = Buffer;
+            b[0] = (data);
+
+            Position += sizeof(byte);
+        }
+
+        public void push(string s) {
+            var b = Buffer;
+            var len = (Int16)s.Length;
+            b[0] = (byte)(len);
+            b[1] = (byte)(len >> 8);
+            Position += sizeof(Int16);
+
+            byte[] byteString = Encoding.UTF8.GetBytes(s);
+            byteString.CopyTo(b, Position);
+            Position += byteString.Length;
+        }
+
+
         public CPacket Clone() {
-            return new CPacket {
+            return new CPacket((byte[])Buffer.Clone()) {
                 Owner = Owner,
-                Buffer = (byte[])Buffer.Clone(),
                 ProtocolId = ProtocolId
             };
         }

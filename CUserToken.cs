@@ -58,7 +58,7 @@ namespace SocketServer {
         public void send(CPacket msg) {
             var p = msg.Clone();
             lock (sendingQueue) {
-                sendingQueue.Enqueue(msg);
+                sendingQueue.Enqueue(p);
                 if (sendingQueue.Count <= 0) {
                     startSend();
                 }
