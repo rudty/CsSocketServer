@@ -23,7 +23,13 @@ namespace SocketServer {
         }
 
         public void onMessage(byte[] buffer) {
-            Peer?.onMessage(buffer);
+            //Peer?.onMessage(buffer);
+            //send(new CPacket(buffer));
+            SendEventArgs.SetBuffer(SendEventArgs.Offset, buffer.Length);
+            Array.Copy(buffer, 0, SendEventArgs.Buffer, SendEventArgs.Offset, buffer.Length);
+            if (false == Socket.SendAsync(SendEventArgs)) {
+                processSend(SendEventArgs);
+            }
         }
 
         public void onRemoved() {
@@ -35,12 +41,12 @@ namespace SocketServer {
             if (e.BytesTransferred <= 0 || e.SocketError != SocketError.Success) {
                 Console.WriteLine("send error");
             }
-            lock (sendingQueue) {
-                sendingQueue.Dequeue();
-                if (sendingQueue.Count > 0) {
-                    startSend();
-                }
-            }
+            //lock (sendingQueue) {
+            //    sendingQueue.Dequeue();
+            //    if (sendingQueue.Count > 0) {
+            //        startSend();
+            //    }
+            //}
         }
 
         void startSend() {
@@ -59,13 +65,14 @@ namespace SocketServer {
             var p = msg.Clone();
             lock (sendingQueue) {
                 sendingQueue.Enqueue(p);
-                if (sendingQueue.Count <= 0) {
+                if (sendingQueue.Count == 1) {
                     startSend();
                 }
             }
         }
 
         public void disconnect() {
+            Peer?.disconnect();
             try {
                 Socket.Shutdown(SocketShutdown.Send);
             } catch {

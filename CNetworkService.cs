@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SocketServer {
     class CNetworkService {
@@ -9,7 +10,7 @@ namespace SocketServer {
         const int maxConnections = 10000;
         private SocketAsyncEventArgsPool receiveEventArgsPool = new SocketAsyncEventArgsPool(maxConnections);
         private SocketAsyncEventArgsPool sendEventArgsPool = new SocketAsyncEventArgsPool(maxConnections);
-        private BufferManager bufferManager = new BufferManager(maxConnections * 2, 1024);
+        private BufferManager bufferManager = new BufferManager(maxConnections * 2 * 1024, 1024);
 
         public delegate void SessionHandler(CUserToken token);
         public SessionHandler SessonCreateCallback { get; set; }
@@ -50,7 +51,7 @@ namespace SocketServer {
 
         void onNewClient(Socket client, object token) {
             SocketAsyncEventArgs receiveArgs = receiveEventArgsPool.Pop();
-            SocketAsyncEventArgs sendArgs = receiveEventArgsPool.Pop();
+            SocketAsyncEventArgs sendArgs = sendEventArgsPool.Pop();
 
             if (SessonCreateCallback != null) {
                 var t = receiveArgs.UserToken as CUserToken;
@@ -63,16 +64,22 @@ namespace SocketServer {
 
         void processReceive(SocketAsyncEventArgs receiveArgs) {
             CUserToken token = receiveArgs.UserToken as CUserToken;
+            if (receiveArgs.SocketError == SocketError.Success) {
+                bool receiveRequire = true;
+                if (receiveArgs.BytesTransferred > 0) {
+                    token.onReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
 
-            if (receiveArgs.BytesTransferred > 0 && receiveArgs.SocketError == SocketError.Success) {
-                token.onReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
+                    if (token.Socket.ReceiveAsync(receiveArgs)) {
+                        receiveRequire = false;
+                    }
+                } 
 
-                if (false == token.Socket.ReceiveAsync(receiveArgs)) {
-                    processReceive(receiveArgs);
+                if (receiveRequire) {
+                    Task.Run(() => beginReceive(token.Socket, receiveArgs, token.SendEventArgs));
                 }
             } else {
-                Console.WriteLine("error {0}, transferred {1}", 
-                    receiveArgs.SocketError, 
+                Console.WriteLine("error {0}, transferred {1}",
+                    receiveArgs.SocketError,
                     receiveArgs.BytesTransferred);
                 closeClientSocket(token);
             }
@@ -89,7 +96,7 @@ namespace SocketServer {
             token.Socket = client;
             token.SendEventArgs = sendArgs;
             token.ReceiveEventArgs = receiveArgs;
-
+            
             if (false == client.ReceiveAsync(receiveArgs)) {
                 processReceive(receiveArgs);
             }

@@ -9,15 +9,10 @@ namespace SocketServer {
     class CListener {
         private SocketAsyncEventArgs acceptArgs;
         private Socket listenSocket;
-        private AutoResetEvent flowControlEvent = new AutoResetEvent(false);
+        private readonly AutoResetEvent flowControlEvent = new AutoResetEvent(false);
 
         public delegate void NewClientHandler(Socket client, object token);
-        public NewClientHandler callbackOnNewClient = null;
-
-        public CListener() {
-
-        }
-
+        public event NewClientHandler OnNewClient = null;
 
         void onAcceptCompleted(object o, SocketAsyncEventArgs e) {
             var socketError = e.SocketError;
@@ -25,7 +20,7 @@ namespace SocketServer {
             var userToken = e.UserToken;
             flowControlEvent.Set();
             if (socketError == SocketError.Success) {
-                callbackOnNewClient?.Invoke(clientSocket, userToken);
+                OnNewClient?.Invoke(clientSocket, userToken);
             } else {
                 Console.WriteLine("fail accept" + socketError);
             }

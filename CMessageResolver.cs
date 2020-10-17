@@ -41,26 +41,31 @@ namespace SocketServer {
         }
 
         public void onReceive(byte[] buffer, int offset, int transffered, CompletedMessageCallback callback) {
-            this.remainBytes = transffered;
+            //this.remainBytes = transffered;
 
-            int srcPosition = offset;
+            //int srcPosition = offset;
 
-            while (remainBytes > 0) {
-                if (currentPosition < Consts.HEADER_SIZE) {
-                    positionToRead = Consts.HEADER_SIZE;
-                    if (false == readUntil(buffer, ref srcPosition, offset, transffered)) {
-                        return;
-                    }
+            //while (remainBytes > 0) {
+            //    if (currentPosition < Consts.HEADER_SIZE) {
+            //        positionToRead = Consts.HEADER_SIZE;
+            //        if (false == readUntil(buffer, ref srcPosition, offset, transffered)) {
+            //            return;
+            //        }
 
 
-                    messageSize = BitConverter.ToInt16(messageBuffer, 0);
-                    positionToRead = messageSize + Consts.HEADER_SIZE;
-                }
+            //        messageSize = BitConverter.ToInt16(messageBuffer, 0);
+            //        positionToRead = messageSize + Consts.HEADER_SIZE;
+            //    }
 
-                if (readUntil(buffer, ref srcPosition, offset, transffered)) {
-                    callback(messageBuffer);
-                    clearBuffer();
-                }
+            //    if (readUntil(buffer, ref srcPosition, offset, transffered)) {
+            //        callback(messageBuffer);
+            //        clearBuffer();
+            //    }
+            //}
+            if (transffered > 0) {
+                byte[] b = new byte[transffered];
+                Array.Copy(buffer, offset, b, 0, transffered);
+                callback(b);
             }
         }
 
