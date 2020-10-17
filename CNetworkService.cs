@@ -7,105 +7,100 @@ using System.Threading.Tasks;
 namespace SocketServer {
     class CNetworkService {
 
-        const int maxConnections = 10000;
-        private SocketAsyncEventArgsPool receiveEventArgsPool = new SocketAsyncEventArgsPool(maxConnections);
-        private SocketAsyncEventArgsPool sendEventArgsPool = new SocketAsyncEventArgsPool(maxConnections);
-        private BufferManager bufferManager = new BufferManager(maxConnections * 2 * 1024, 1024);
+        const int MAX_CONNECTION_SIZE = 100;
+        const int DEFAULT_BUFFER_SIZE = 1024;
+        private SocketAsyncEventArgsPool receiveEventArgsPool = new SocketAsyncEventArgsPool(MAX_CONNECTION_SIZE);
+        private SocketAsyncEventArgsPool sendEventArgsPool = new SocketAsyncEventArgsPool(MAX_CONNECTION_SIZE);
+        private BufferManager receiveBufferManager = new BufferManager(MAX_CONNECTION_SIZE * DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
 
         public delegate void SessionHandler(CUserToken token);
-        public SessionHandler SessonCreateCallback { get; set; }
+        public event SessionHandler SessonCreateCallback;
 
         public CNetworkService() {
-            bufferManager.InitBuffer();
-            for (int i  = 0; i < maxConnections; ++i) {
+            receiveBufferManager.InitBuffer();
+            for (int i  = 0; i < MAX_CONNECTION_SIZE; ++i) {
                 CUserToken token = new CUserToken();
 
                 var rArgs = new SocketAsyncEventArgs();
-                rArgs.Completed += receiveComplete;
+                rArgs.Completed += OnReceive;
                 rArgs.UserToken = token;
                 receiveEventArgsPool.Push(rArgs);
-
-                bufferManager.SetBuffer(rArgs);
+                receiveBufferManager.SetBuffer(rArgs);
 
                 var sArgs = new SocketAsyncEventArgs();
-                sArgs.Completed += sendCompleted;
+                sArgs.Completed += OnSendCompleted;
                 sArgs.UserToken = token;
                 sendEventArgsPool.Push(sArgs);
-
-                bufferManager.SetBuffer(sArgs);
+                // send는 buffer 할당하지 않았음 
             }
         }
 
-        private void sendCompleted(object sender, SocketAsyncEventArgs e) {
+        void OnSendCompleted(object sender, SocketAsyncEventArgs e) {
             var token = e.UserToken as CUserToken;
             token.processSend(e);
         }
 
-        private void receiveComplete(object sender, SocketAsyncEventArgs e) {
-            if (e.LastOperation == SocketAsyncOperation.Receive) {
-                processReceive(e);
-            } else {
-                throw new ArgumentException("last operation completed on the socket was not a receive");
+        void OnNewClient(Socket client) {
+            var receiveArgs = receiveEventArgsPool.Pop();
+            var sendArgs = sendEventArgsPool.Pop();
+
+            var userToken = receiveArgs.UserToken as CUserToken;
+            userToken.Socket = client;
+            userToken.ReceiveEventArgs = receiveArgs;
+            userToken.SendEventArgs = sendArgs;
+
+            SessonCreateCallback?.Invoke(userToken);
+            DoReceive(userToken);
+        }
+
+        void DoReceive(CUserToken token) {
+            var receiveArgs = token.ReceiveEventArgs;
+            if (false == token.Socket.ReceiveAsync(receiveArgs)) {
+                OnReceive(token.Socket, receiveArgs);
             }
         }
 
-        void onNewClient(Socket client, object token) {
-            SocketAsyncEventArgs receiveArgs = receiveEventArgsPool.Pop();
-            SocketAsyncEventArgs sendArgs = sendEventArgsPool.Pop();
-
-            if (SessonCreateCallback != null) {
-                var t = receiveArgs.UserToken as CUserToken;
-                SessonCreateCallback.Invoke(t);
-            }
-
-            beginReceive(client, receiveArgs, sendArgs);
-
-        }
-
-        void processReceive(SocketAsyncEventArgs receiveArgs) {
+        /// <summary>
+        /// 클라이언트로부터 무언가를 전달받았을 때 호출됩니다.
+        /// </summary>
+        /// <param name="nil">사용하지 말 것</param>
+        /// <param name="receiveArgs">소켓 이벤트</param>
+        void OnReceive(object nil, SocketAsyncEventArgs receiveArgs) {
             CUserToken token = receiveArgs.UserToken as CUserToken;
-            if (receiveArgs.SocketError == SocketError.Success) {
-                bool receiveRequire = true;
-                if (receiveArgs.BytesTransferred > 0) {
-                    token.onReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
-
-                    if (token.Socket.ReceiveAsync(receiveArgs)) {
-                        receiveRequire = false;
-                    }
-                } 
-
-                if (receiveRequire) {
-                    Task.Run(() => beginReceive(token.Socket, receiveArgs, token.SendEventArgs));
+            try {
+                if (receiveArgs.LastOperation == SocketAsyncOperation.Receive) {
+                    CloseClientSocket(token);
+                    throw new ArgumentException("last operation completed on the socket was not a receive");
                 }
-            } else {
-                Console.WriteLine("error {0}, transferred {1}",
-                    receiveArgs.SocketError,
-                    receiveArgs.BytesTransferred);
-                closeClientSocket(token);
+
+                if (receiveArgs.SocketError != SocketError.Success) {
+                    CloseClientSocket(token);
+                    throw new InvalidOperationException($"error {receiveArgs.SocketError}, transferred {receiveArgs.BytesTransferred}");
+                }
+
+                if (receiveArgs.BytesTransferred <= 0) {
+                    Console.WriteLine("transferred {1}?",
+                         receiveArgs.SocketError,
+                         receiveArgs.BytesTransferred);
+                } else {
+                    token.onReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
+                }
+                Task.Run(() => DoReceive(token));
+            } catch (Exception e) {
+                Console.WriteLine(e);
             }
         }
 
-        void closeClientSocket(CUserToken token) {
+        void CloseClientSocket(CUserToken token) {
             token.onRemoved();
             receiveEventArgsPool?.Push(token.ReceiveEventArgs);
             sendEventArgsPool?.Push(token.SendEventArgs);
         }
 
-        void beginReceive(Socket client, SocketAsyncEventArgs receiveArgs, SocketAsyncEventArgs sendArgs) {
-            CUserToken token = receiveArgs.UserToken as CUserToken;
-            token.Socket = client;
-            token.SendEventArgs = sendArgs;
-            token.ReceiveEventArgs = receiveArgs;
-            
-            if (false == client.ReceiveAsync(receiveArgs)) {
-                processReceive(receiveArgs);
-            }
-        }
-
-        public void listen(string host, int port, int backlog) {
+        public void listen(string host, int port) {
             var listener = new CListener();
-            listener.callbackOnNewClient += onNewClient;
-            listener.start(host, port, backlog);
+            listener.OnNewClient += OnNewClient;
+            listener.Start(host, port);
         }
     }
 }

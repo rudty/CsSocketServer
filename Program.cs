@@ -32,7 +32,7 @@ namespace SocketServer {
         static void Main(string[] args) {
             CNetworkService svc = new CNetworkService();
             svc.SessonCreateCallback += onSessionCreated;
-            svc.listen("0.0.0.0", 8080, 100);
+            svc.listen("0.0.0.0", 8080);
             Console.WriteLine("sever start 8080");
             Console.ReadLine();
 
