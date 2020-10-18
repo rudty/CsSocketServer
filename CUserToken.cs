@@ -11,6 +11,8 @@ namespace SocketServer {
         internal SocketAsyncEventArgs SendEventArgs { get; set; }
         public Socket Socket { get; set; }
 
+        public CNetworkService NetworkService { get; set; }
+
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
 
         CMessageResolver messageResolver = new CMessageResolver();
@@ -18,55 +20,53 @@ namespace SocketServer {
         public IPeer Peer { get; set; }
 
 
-        public void onReceive(byte[] buffer, int offset, int byteTransferred) {
-            messageResolver.onReceive(buffer, offset, byteTransferred, onMessage);
+        public void OnReceive(byte[] buffer, int offset, int byteTransferred) {
+            //messageResolver.onReceive(buffer, offset, byteTransferred, onMessage);
+            CPacket p = new CPacket();
+            p.Push(buffer, offset, byteTransferred);
+            Send(p);
         }
 
         public void onMessage(byte[] buffer) {
             //Peer?.onMessage(buffer);
             //send(new CPacket(buffer));
-            SendEventArgs.SetBuffer(SendEventArgs.Offset, buffer.Length);
-            Array.Copy(buffer, 0, SendEventArgs.Buffer, SendEventArgs.Offset, buffer.Length);
-            if (false == Socket.SendAsync(SendEventArgs)) {
-                processSend(SendEventArgs);
-            }
-        }
-
-        public void onRemoved() {
-            sendingQueue.Clear();
-            Peer?.onRemoved();
-        }
-
-        public void processSend(SocketAsyncEventArgs e) {
-            if (e.BytesTransferred <= 0 || e.SocketError != SocketError.Success) {
-                Console.WriteLine("send error");
-            }
-            //lock (sendingQueue) {
-            //    sendingQueue.Dequeue();
-            //    if (sendingQueue.Count > 0) {
-            //        startSend();
-            //    }
+            //SendEventArgs.SetBuffer(SendEventArgs.Offset, buffer.Length);
+            //Array.Copy(buffer, 0, SendEventArgs.Buffer, SendEventArgs.Offset, buffer.Length);
+            //if (false == Socket.SendAsync(SendEventArgs)) {
+            //    processSend(SendEventArgs);
             //}
         }
 
-        void startSend() {
+        public void onRemoved() {
+            //sendingQueue.Clear();
+            //Peer?.onRemoved();
+        }
+
+        public void OnSendCompleted(SocketAsyncEventArgs e) {
+            if (e.BytesTransferred <= 0 || e.SocketError != SocketError.Success) {
+                Console.WriteLine("send error");
+            }
             lock (sendingQueue) {
-                var msg = sendingQueue.Peek();
-                msg.recordSize();
-                SendEventArgs.SetBuffer(SendEventArgs.Offset, msg.Position);
-                Array.Copy(msg.Buffer, 0, SendEventArgs.Buffer, SendEventArgs.Offset,  msg.Position);
-                if (false == Socket.SendAsync(SendEventArgs)) {
-                    processSend(SendEventArgs);
+                sendingQueue.Dequeue();
+                if (sendingQueue.Count > 0) {
+                    DoSendQueue();
                 }
             }
         }
 
-        public void send(CPacket msg) {
-            var p = msg.Clone();
+        void DoSendQueue() {
             lock (sendingQueue) {
-                sendingQueue.Enqueue(p);
+                var msg = sendingQueue.Peek();
+                //msg.recordSize();
+               NetworkService.Send(this, msg);  
+            }
+        }
+
+        public void Send(CPacket msg) {
+            lock (sendingQueue) {
+                sendingQueue.Enqueue(msg);
                 if (sendingQueue.Count == 1) {
-                    startSend();
+                    DoSendQueue();
                 }
             }
         }

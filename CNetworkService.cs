@@ -37,7 +37,7 @@ namespace SocketServer {
 
         void OnSendCompleted(object sender, SocketAsyncEventArgs e) {
             var token = e.UserToken as CUserToken;
-            token.processSend(e);
+            token.OnSendCompleted(e);
         }
 
         void OnNewClient(Socket client) {
@@ -48,6 +48,7 @@ namespace SocketServer {
             userToken.Socket = client;
             userToken.ReceiveEventArgs = receiveArgs;
             userToken.SendEventArgs = sendArgs;
+            userToken.NetworkService = this;
 
             SessonCreateCallback?.Invoke(userToken);
             DoReceive(userToken);
@@ -68,7 +69,7 @@ namespace SocketServer {
         void OnReceive(object nil, SocketAsyncEventArgs receiveArgs) {
             CUserToken token = receiveArgs.UserToken as CUserToken;
             try {
-                if (receiveArgs.LastOperation == SocketAsyncOperation.Receive) {
+                if (receiveArgs.LastOperation != SocketAsyncOperation.Receive) {
                     CloseClientSocket(token);
                     throw new ArgumentException("last operation completed on the socket was not a receive");
                 }
@@ -83,11 +84,18 @@ namespace SocketServer {
                          receiveArgs.SocketError,
                          receiveArgs.BytesTransferred);
                 } else {
-                    token.onReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
+                    token.OnReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
                 }
                 Task.Run(() => DoReceive(token));
             } catch (Exception e) {
                 Console.WriteLine(e);
+            }
+        }
+        internal void Send(CUserToken token, CPacket p) {
+            var e = token.SendEventArgs;
+            e.SetBuffer(p.Buffer, 0, p.Position);
+            if (false == token.Socket.SendAsync(e)) {
+                OnSendCompleted(token.Socket, e);
             }
         }
 
