@@ -79,18 +79,18 @@ namespace SocketServer {
                     throw new InvalidOperationException($"error {receiveArgs.SocketError}, transferred {receiveArgs.BytesTransferred}");
                 }
 
-                if (receiveArgs.BytesTransferred <= 0) {
-                    Console.WriteLine("transferred {1}?",
-                         receiveArgs.SocketError,
-                         receiveArgs.BytesTransferred);
-                } else {
-                    token.OnReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
-                }
+                if (receiveArgs.BytesTransferred == 0) {
+                    CloseClientSocket(token);
+                } 
+                    
+                token.OnReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
+                
                 Task.Run(() => DoReceive(token));
             } catch (Exception e) {
                 Console.WriteLine(e);
             }
         }
+
         internal void Send(CUserToken token, CPacket p) {
             var e = token.SendEventArgs;
             e.SetBuffer(p.Buffer, 0, p.Position);

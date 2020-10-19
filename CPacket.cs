@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace SocketServer {
@@ -9,14 +10,20 @@ namespace SocketServer {
         public int Position { get; private set; } = 0;// Consts.HEADER_SIZE;
         public Int16 ProtocolId { get; private set; }
 
-        public CPacket()
-            : this(new byte[1024]) {
+        public CPacket() {
+            Buffer = CPacketBufferManager.Obtain();
         }
 
-        public CPacket(byte[] buf) {
-            Buffer = buf;
+        ~CPacket() {
+            Recycle();
         }
 
+        public void Recycle() {
+            if (Buffer != null) {
+                CPacketBufferManager.Recycle(Buffer);
+                Buffer = null;
+            }
+        }
         public void recordSize() {
             Int16 s = (Int16)(Position - Consts.HEADER_SIZE);
             byte[] header = BitConverter.GetBytes(s);
@@ -59,11 +66,5 @@ namespace SocketServer {
         }
 
 
-        public CPacket Clone() {
-            return new CPacket((byte[])Buffer.Clone()) {
-                Owner = Owner,
-                ProtocolId = ProtocolId
-            };
-        }
     }
 }

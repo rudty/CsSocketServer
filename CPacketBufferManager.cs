@@ -5,32 +5,26 @@ using System.Text;
 namespace SocketServer {
     class CPacketBufferManager {
         private static object mutex = new object();
-        private static Stack<CPacket> pool = new Stack<CPacket>();
-        private static int poolCapacity = 0;
 
-        public static void initialize(int capacity) {
-            poolCapacity = capacity;
-            allocate();
-        }
+        private static Stack<byte[]> pool = new Stack<byte[]>();
 
-        private static void allocate() {
-            for (int i = 0; i < poolCapacity; i++) {
-                pool.Push(new CPacket());
-            }
-        }
+        private const int DEFAULT_BUFFER_SIZE = 1024;
 
-        public static CPacket pop() {
+        internal static byte[] Obtain() {
             lock (mutex) {
-                if (pool.Count <= 0) {
-                    allocate();
+                if (pool.Count == 0) {
+                    return new byte[DEFAULT_BUFFER_SIZE];
                 }
                 return pool.Pop();
             }
         }
 
-        public static void push(CPacket packet) {
+        internal static void Recycle(byte[] buffer) {
+            if (buffer.Length != DEFAULT_BUFFER_SIZE) {
+                throw new ArgumentException($"${nameof(buffer)} Length must  {DEFAULT_BUFFER_SIZE} but {buffer.Length}");
+            }
             lock (mutex) {
-                pool.Push(packet);
+                pool.Push(buffer);
             }
         }
     }
