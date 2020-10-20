@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SocketServer {
     class MyPeer : IPeer {
@@ -30,13 +31,14 @@ namespace SocketServer {
 
     class Program {
         static void Main(string[] args) {
-            CNetworkService svc = new CNetworkService();
-            svc.SessonCreateCallback += onSessionCreated;
-            svc.listen("0.0.0.0", 8080);
-            Console.WriteLine("sever start 8080");
-            Console.ReadLine();
+            //CNetworkService svc = new CNetworkService();
+            //svc.SessonCreateCallback += onSessionCreated;
+            //svc.listen("0.0.0.0", 8080);
+            //Console.WriteLine("sever start 8080");
+            //Console.ReadLine();
 
-
+            CPacket p = new CPacket();
+            p.Push("HELLO");
         }
 
         private static void onSessionCreated(CUserToken token) {

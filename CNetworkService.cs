@@ -93,7 +93,8 @@ namespace SocketServer {
 
         internal void Send(CUserToken token, CPacket p) {
             var e = token.SendEventArgs;
-            e.SetBuffer(p.Buffer, 0, p.Position);
+            //e.SetBuffer(p.Buffer, 0, p.Position);
+            e.SetBuffer(p.Buffer.Slice(0, p.Position));
             if (false == token.Socket.SendAsync(e)) {
                 OnSendCompleted(token.Socket, e);
             }
