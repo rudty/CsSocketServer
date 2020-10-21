@@ -37,7 +37,12 @@ namespace SocketServer {
 
         void OnSendCompleted(object sender, SocketAsyncEventArgs e) {
             var token = e.UserToken as CUserToken;
-            token.OnSendCompleted(e);
+            if (e.BytesTransferred <= 0 || e.SocketError != SocketError.Success) {
+                Console.WriteLine("send error");
+                CloseClient(token);
+            } else {
+                token.OnSendCompleted(e);
+            }
         }
 
         void OnNewClient(Socket client) {
@@ -70,17 +75,17 @@ namespace SocketServer {
             CUserToken token = receiveArgs.UserToken as CUserToken;
             try {
                 if (receiveArgs.LastOperation != SocketAsyncOperation.Receive) {
-                    CloseClientSocket(token);
+                    CloseClient(token);
                     throw new ArgumentException("last operation completed on the socket was not a receive");
                 }
 
                 if (receiveArgs.SocketError != SocketError.Success) {
-                    CloseClientSocket(token);
+                    CloseClient(token);
                     throw new InvalidOperationException($"error {receiveArgs.SocketError}, transferred {receiveArgs.BytesTransferred}");
                 }
 
                 if (receiveArgs.BytesTransferred == 0) {
-                    CloseClientSocket(token);
+                    CloseClient(token);
                 } 
                     
                 token.OnReceive(receiveArgs.Buffer, receiveArgs.Offset, receiveArgs.BytesTransferred);
@@ -93,20 +98,27 @@ namespace SocketServer {
 
         internal void Send(CUserToken token, CPacket p) {
             var e = token.SendEventArgs;
-            //e.SetBuffer(p.Buffer, 0, p.Position);
             e.SetBuffer(p.Buffer.Slice(0, p.Position));
             if (false == token.Socket.SendAsync(e)) {
                 OnSendCompleted(token.Socket, e);
             }
         }
 
-        void CloseClientSocket(CUserToken token) {
-            token.onRemoved();
+        void CloseClient(CUserToken token) {
+            token.OnRemoved();
+
+            try {
+                token.Socket.Shutdown(SocketShutdown.Send);
+            } catch {
+
+            }
+            token.Socket.Close();
+
             receiveEventArgsPool?.Push(token.ReceiveEventArgs);
             sendEventArgsPool?.Push(token.SendEventArgs);
         }
 
-        public void listen(string host, int port) {
+        public void Listen(string host, int port) {
             var listener = new CListener();
             listener.OnNewClient += OnNewClient;
             listener.Start(host, port);

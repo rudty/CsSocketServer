@@ -7,19 +7,20 @@ using System.Text;
 namespace SocketServer {
     class CUserToken {
 
+        bool online = true;
+
         internal SocketAsyncEventArgs ReceiveEventArgs { get; set; }
         internal SocketAsyncEventArgs SendEventArgs { get; set; }
-        public Socket Socket { get; set; }
+        internal Socket Socket { get; set; }
 
-        public CNetworkService NetworkService { get; set; }
+        internal CNetworkService NetworkService { get; set; }
 
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
 
-        CMessageResolver messageResolver = new CMessageResolver();
+        //CMessageResolver messageResolver = new CMessageResolver();
 
-        public IPeer Peer { get; set; }
-
-
+        public IPeer Peer { private get; set; }
+    
         public void OnReceive(byte[] buffer, int offset, int byteTransferred) {
             //messageResolver.onReceive(buffer, offset, byteTransferred, onMessage);
             CPacket p = new CPacket();
@@ -37,17 +38,22 @@ namespace SocketServer {
             //}
         }
 
-        public void onRemoved() {
-            //sendingQueue.Clear();
-            //Peer?.onRemoved();
+        public void OnRemoved() {
+            Peer?.OnDisconnected();
+
+            lock (sendingQueue) {
+                online = false;
+                while (sendingQueue.Count > 0) {
+                    var p = sendingQueue.Dequeue();
+                    p.Recycle();
+                }
+            }
         }
 
         public void OnSendCompleted(SocketAsyncEventArgs e) {
-            if (e.BytesTransferred <= 0 || e.SocketError != SocketError.Success) {
-                Console.WriteLine("send error");
-            }
             lock (sendingQueue) {
-                sendingQueue.Dequeue();
+                var lastSend = sendingQueue.Dequeue();
+                lastSend.Recycle();
                 if (sendingQueue.Count > 0) {
                     DoSendQueue();
                 }
@@ -64,21 +70,13 @@ namespace SocketServer {
 
         public void Send(CPacket msg) {
             lock (sendingQueue) {
-                sendingQueue.Enqueue(msg);
-                if (sendingQueue.Count == 1) {
-                    DoSendQueue();
+                if (online) {
+                    sendingQueue.Enqueue(msg);
+                    if (sendingQueue.Count == 1) {
+                        DoSendQueue();
+                    }
                 }
             }
-        }
-
-        public void disconnect() {
-            Peer?.disconnect();
-            try {
-                Socket.Shutdown(SocketShutdown.Send);
-            } catch {
-
-            }
-            Socket.Close();
         }
     }
 }

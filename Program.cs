@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Text;
 
 namespace SocketServer {
     class MyPeer : IPeer {
@@ -8,37 +10,25 @@ namespace SocketServer {
             this.token = token;
         }
 
-        void IPeer.disconnect() {
-            Console.WriteLine("disconnect");
+        void IPeer.OnMessage(byte[] buffer) {
+            Console.WriteLine("OnMessage");
         }
 
-        void IPeer.onMessage(byte[] buffer) {
-            Console.WriteLine("onMessage");
+        void IPeer.OnDisconnected() {
+            Console.WriteLine("OnDisconnected");
         }
-
-        void IPeer.onRemoved() {
-            Console.WriteLine("onRemoved");
-        }
-
-        void IPeer.processUserOperation() {
-            Console.WriteLine("processUserOperation");
-        }
-
-        void IPeer.send() {
-            Console.WriteLine("send");
+        void IPeer.OnSendCompleted() {
+            Console.WriteLine("OnSendCompleted");
         }
     }
 
     class Program {
         static void Main(string[] args) {
-            //CNetworkService svc = new CNetworkService();
-            //svc.SessonCreateCallback += onSessionCreated;
-            //svc.listen("0.0.0.0", 8080);
-            //Console.WriteLine("sever start 8080");
-            //Console.ReadLine();
-
-            CPacket p = new CPacket();
-            p.Push("HELLO");
+            CNetworkService svc = new CNetworkService();
+            svc.SessonCreateCallback += onSessionCreated;
+            svc.Listen("0.0.0.0", 8080);
+            Console.WriteLine("sever start 8080");
+            Console.ReadLine();
         }
 
         private static void onSessionCreated(CUserToken token) {

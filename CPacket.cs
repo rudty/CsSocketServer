@@ -47,6 +47,10 @@ namespace SocketServer {
             Position += sizeof(byte);
         }
 
+        public void Push(byte[] data) {
+            Push(data, 0, data.Length);
+        }
+
         public void Push(byte[] data, int offset, int size) {
             var b = Buffer.Span;
             //Array.Copy(data, offset, b, Position, size);
@@ -59,8 +63,8 @@ namespace SocketServer {
         public void Push(string s) {
             var b = Buffer.Span;
             var len = (Int16)s.Length;
-            b[0] = (byte)(len);
-            b[1] = (byte)(len >> 8);
+            b[Position + 0] = (byte)(len);
+            b[Position + 1] = (byte)(len >> 8);
             Position += sizeof(Int16);
 
             byte[] byteString = Encoding.UTF8.GetBytes(s);
