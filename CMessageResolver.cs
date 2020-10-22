@@ -4,8 +4,11 @@ using System.Net.NetworkInformation;
 using System.Text;
 
 namespace SocketServer {
+    
     class CMessageResolver {
         public delegate void CompletedMessageCallback(byte[] buffer);
+        public event CompletedMessageCallback OnMessageReceive;
+        public event CompletedMessageCallback OnDecodeFail;
 
         int remainBytes = 0;
         int currentPosition = 0;
@@ -13,7 +16,6 @@ namespace SocketServer {
         int messageSize = 0;
 
         byte[] messageBuffer = new byte[Consts.MESSAGE_BUFFER_SIZE];
-
 
         bool readUntil(byte[] buffer, ref int srcPosition, int offset, int transffered) {
             if (currentPosition >= offset + transffered) {
@@ -40,10 +42,36 @@ namespace SocketServer {
             return true;
         }
 
-        public void onReceive(byte[] buffer, int offset, int transffered, CompletedMessageCallback callback) {
-            //this.remainBytes = transffered;
+        void DecodeHeader(byte[] buffer, int offset, int transffered) {
+            const int minPacketSize = Consts.HEADER_SIZE + 1;
+            if (transffered < minPacketSize) {
+                throw new Exception($"packet size must > {transffered}");
+            }
+
+            if (buffer[offset] != Consts.PACKET_BEGIN) {
+                throw new Exception($"packet header[0] error {buffer[0]}");
+            }
+
+            int len = 0;
+            len += buffer[offset + 1];
+            len += buffer[offset + 2] << 8;
+
+            if (len < 0) {
+                throw new Exception($"packet length error {len}");
+            }
+
+            this.messageSize = len;
+            this.currentPosition = Consts.HEADER_SIZE;
+        }
+
+        public void OnReceive(byte[] buffer, int offset, int transffered) {
+            //remainBytes = transffered;
 
             //int srcPosition = offset;
+
+            if (currentPosition < Consts.HEADER_SIZE) {
+                DecodeHeader(buffer, offset, transffered);
+            }
 
             //while (remainBytes > 0) {
             //    if (currentPosition < Consts.HEADER_SIZE) {
@@ -65,7 +93,7 @@ namespace SocketServer {
             if (transffered > 0) {
                 byte[] b = new byte[transffered];
                 Array.Copy(buffer, offset, b, 0, transffered);
-                callback(b);
+                OnDecodeFail(b);
             }
         }
 

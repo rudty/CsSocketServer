@@ -7,19 +7,23 @@ using System.Text;
 namespace SocketServer {
     class CUserToken {
 
-        bool online = true;
-
         internal SocketAsyncEventArgs ReceiveEventArgs { get; set; }
         internal SocketAsyncEventArgs SendEventArgs { get; set; }
         internal Socket Socket { get; set; }
 
         internal CNetworkService NetworkService { get; set; }
 
+        bool online = true;
+
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
 
-        //CMessageResolver messageResolver = new CMessageResolver();
+        CMessageResolver messageResolver = new CMessageResolver();
 
         public IPeer Peer { private get; set; }
+
+        public CUserToken() {
+            messageResolver.OnMessageReceive += OnMessageReceive;
+        }
     
         public void OnReceive(byte[] buffer, int offset, int byteTransferred) {
             //messageResolver.onReceive(buffer, offset, byteTransferred, onMessage);
@@ -28,7 +32,7 @@ namespace SocketServer {
             Send(p);
         }
 
-        public void onMessage(byte[] buffer) {
+        public void OnMessageReceive(byte[] buffer) {
             //Peer?.onMessage(buffer);
             //send(new CPacket(buffer));
             //SendEventArgs.SetBuffer(SendEventArgs.Offset, buffer.Length);
@@ -54,17 +58,17 @@ namespace SocketServer {
             lock (sendingQueue) {
                 var lastSend = sendingQueue.Dequeue();
                 lastSend.Recycle();
-                if (sendingQueue.Count > 0) {
-                    DoSendQueue();
-                }
+                DoSendQueue();
             }
         }
 
         void DoSendQueue() {
-            lock (sendingQueue) {
-                var msg = sendingQueue.Peek();
-                //msg.recordSize();
-               NetworkService.Send(this, msg);  
+            if (online) {
+                if (sendingQueue.Count > 0) {
+                    var msg = sendingQueue.Peek();
+                    //msg.recordSize();
+                    NetworkService.Send(this, msg);
+                }
             }
         }
 
