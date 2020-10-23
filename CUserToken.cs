@@ -23,13 +23,12 @@ namespace SocketServer {
 
         public CUserToken() {
             messageResolver.OnMessageReceive += OnMessageReceive;
+            messageResolver.OnMessageDecodeFail += OnMessageDecodeFail;
         }
     
         public void OnReceive(byte[] buffer, int offset, int byteTransferred) {
-            //messageResolver.onReceive(buffer, offset, byteTransferred, onMessage);
-            CPacket p = new CPacket();
-            p.Push(buffer, offset, byteTransferred);
-            Send(p);
+            messageResolver.OnRawByteReceive(buffer, offset, byteTransferred);
+ 
         }
 
         public void OnMessageReceive(byte[] buffer) {
@@ -40,6 +39,13 @@ namespace SocketServer {
             //if (false == Socket.SendAsync(SendEventArgs)) {
             //    processSend(SendEventArgs);
             //}
+        }
+
+        public void OnMessageDecodeFail(Exception ex, byte[] buffer) {
+            Console.WriteLine(ex);
+            CPacket p = new CPacket();
+            p.Push(buffer, 0, buffer.Length);
+            Send(p);
         }
 
         public void OnRemoved() {
