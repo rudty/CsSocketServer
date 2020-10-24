@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace SocketServer {
-    class CUserToken {
+    public class CUserToken {
 
         internal SocketAsyncEventArgs ReceiveEventArgs { get; set; }
         internal SocketAsyncEventArgs SendEventArgs { get; set; }
@@ -28,17 +28,10 @@ namespace SocketServer {
     
         public void OnReceive(byte[] buffer, int offset, int byteTransferred) {
             messageResolver.OnRawByteReceive(buffer, offset, byteTransferred);
- 
         }
 
         public void OnMessageReceive(byte[] buffer) {
-            //Peer?.onMessage(buffer);
-            //send(new CPacket(buffer));
-            //SendEventArgs.SetBuffer(SendEventArgs.Offset, buffer.Length);
-            //Array.Copy(buffer, 0, SendEventArgs.Buffer, SendEventArgs.Offset, buffer.Length);
-            //if (false == Socket.SendAsync(SendEventArgs)) {
-            //    processSend(SendEventArgs);
-            //}
+            Peer?.OnMessage(buffer);
         }
 
         public void OnMessageDecodeFail(Exception ex, byte[] buffer) {
@@ -72,7 +65,6 @@ namespace SocketServer {
             if (online) {
                 if (sendingQueue.Count > 0) {
                     var msg = sendingQueue.Peek();
-                    //msg.recordSize();
                     NetworkService.Send(this, msg);
                 }
             }

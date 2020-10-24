@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace SocketServer {
-    class CPacket {
+    public class CPacket {
         public IPeer Owner { get; private set; }
         public Memory<byte> Buffer { get; private set; }
         public int Position { get; private set; } = 0;// Consts.HEADER_SIZE;

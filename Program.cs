@@ -25,13 +25,13 @@ namespace SocketServer {
     class Program {
         static void Main(string[] args) {
             CNetworkService svc = new CNetworkService();
-            svc.SessonCreateCallback += onSessionCreated;
+            svc.OnSessionCreated += OnSessionCreated;
             svc.Listen("0.0.0.0", 8080);
             Console.WriteLine("sever start 8080");
             Console.ReadLine();
         }
 
-        private static void onSessionCreated(CUserToken token) {
+        private static void OnSessionCreated(CUserToken token) {
             Console.WriteLine(token);
             token.Peer = new MyPeer(token);
         }

@@ -14,7 +14,7 @@ namespace SocketServer {
         private BufferManager receiveBufferManager = new BufferManager(MAX_CONNECTION_SIZE * DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
 
         public delegate void SessionHandler(CUserToken token);
-        public event SessionHandler SessonCreateCallback;
+        public event SessionHandler OnSessionCreated;
 
         public CNetworkService() {
             receiveBufferManager.InitBuffer();
@@ -55,7 +55,7 @@ namespace SocketServer {
             userToken.SendEventArgs = sendArgs;
             userToken.NetworkService = this;
 
-            SessonCreateCallback?.Invoke(userToken);
+            OnSessionCreated?.Invoke(userToken);
             DoReceive(userToken);
         }
 

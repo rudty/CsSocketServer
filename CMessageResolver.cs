@@ -17,7 +17,7 @@ namespace SocketServer {
         readonly byte[] messageBuffer = new byte[Consts.MESSAGE_BUFFER_SIZE];
 
         void DecodeHeader(byte[] buffer, int offset, int transffered) {
-            const int minPacketSize = Consts.HEADER_SIZE + 1;
+            const int minPacketSize = Consts.HEADER_SIZE;
             if (transffered < minPacketSize) {
                 throw new Exception($"packet size must > {transffered}");
             }
@@ -43,13 +43,12 @@ namespace SocketServer {
 
         public void OnRawByteReceive(byte[] buffer, int offset, int transffered) {
             try {
-                if (currentPosition < Consts.HEADER_SIZE) {
+                if (messageSize == -1) {
                     DecodeHeader(buffer, offset, transffered);
-                    currentPosition = Consts.HEADER_SIZE;
                     offset += Consts.HEADER_SIZE;
                     transffered -= Consts.HEADER_SIZE;
-
                 }
+
                 int copySize = transffered;
                 int maxRemainByte = messageBuffer.Length - currentPosition;
 
@@ -57,12 +56,14 @@ namespace SocketServer {
                     copySize = maxRemainByte;
                 }
 
-                Array.Copy(
-                    buffer,
-                    offset,
-                    messageBuffer,
-                    currentPosition,
-                    copySize);
+                if (copySize > 0) {
+                    Array.Copy(
+                        buffer,
+                        offset,
+                        messageBuffer,
+                        currentPosition,
+                        copySize);
+                }
 
                 currentPosition += copySize;
 
@@ -72,7 +73,7 @@ namespace SocketServer {
                 }
 
             } catch (Exception e) {
-
+                Console.WriteLine(e);
                 if (transffered > 0) {
                     byte[] b = new byte[transffered];
                     Array.Copy(buffer, offset, b, 0, transffered);
@@ -86,7 +87,7 @@ namespace SocketServer {
                 messageBuffer[i] = 0;
             }
             currentPosition = 0;
-            messageSize = 0;
+            messageSize = -1;
         }
     }
 }
