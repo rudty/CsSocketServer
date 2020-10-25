@@ -13,7 +13,7 @@ namespace SocketServer {
         public event MessageDecodeFailCallback OnMessageDecodeFail;
 
         int currentPosition = 0;
-        int messageSize = 0;
+        int messageSize = -1;
         readonly byte[] messageBuffer = new byte[Consts.MESSAGE_BUFFER_SIZE];
 
         void DecodeHeader(byte[] buffer, int offset, int transffered) {

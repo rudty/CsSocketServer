@@ -29,6 +29,7 @@ namespace SocketServer {
             svc.Listen("0.0.0.0", 8080);
             Console.WriteLine("sever start 8080");
             Console.ReadLine();
+           
         }
 
         private static void OnSessionCreated(CUserToken token) {
