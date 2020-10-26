@@ -19,7 +19,7 @@ namespace SocketServer {
         }
 
         public void Recycle() {
-            if (Buffer.IsEmpty) {
+            if (!Buffer.IsEmpty) {
                 CPacketBufferManager.Recycle(Buffer);
                 Buffer = null;
             }
@@ -32,17 +32,18 @@ namespace SocketServer {
 
         public void Push(int data) {
             var b = Buffer.Span;
-            b[0] = (byte)(data);
-            b[1] = (byte)(data >> 8);
-            b[2] = (byte)(data >> 16);
-            b[3] = (byte)(data >> 24);
+            int p = Position;
+            b[p] = (byte)(data);
+            b[p + 1] = (byte)(data >> 8);
+            b[p + 2] = (byte)(data >> 16);
+            b[p + 3] = (byte)(data >> 24);
 
             Position += sizeof(int);
         }
 
         public void Push(byte data) {
             var b = Buffer.Span;
-            b[0] = (data);
+            b[Position] = (data);
 
             Position += sizeof(byte);
         }
@@ -51,9 +52,12 @@ namespace SocketServer {
             Push(data, 0, data.Length);
         }
 
+        public void Push(Memory<byte> data) {
+            data.CopyTo(Buffer.Slice(Position));
+        }
+
         public void Push(byte[] data, int offset, int size) {
             var b = Buffer.Span;
-            //Array.Copy(data, offset, b, Position, size);
             data
                 .AsSpan(offset, size)
                 .CopyTo(b.Slice(Position));

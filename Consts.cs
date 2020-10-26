@@ -1,6 +1,10 @@
 ﻿namespace SocketServer {
     class Consts {
         public const int DEFAULT_ACCEPT_BACKLOG_SIZE = 511;
+
+        const int MAX_CONNECTION_SIZE = 100;
+        const int DEFAULT_BUFFER_SIZE = 1024;
+
         public const int HEADER_SIZE = 3;
         public const int MESSAGE_BUFFER_SIZE = 1024;
         public const int ALLOCATE_BUFFER_COUNT = 5;

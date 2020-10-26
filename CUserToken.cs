@@ -6,9 +6,6 @@ using System.Text;
 
 namespace SocketServer {
     public class CUserToken {
-
-        internal SocketAsyncEventArgs ReceiveEventArgs { get; set; }
-        internal SocketAsyncEventArgs SendEventArgs { get; set; }
         internal Socket Socket { get; set; }
 
         internal CNetworkService NetworkService { get; set; }
@@ -26,18 +23,18 @@ namespace SocketServer {
             messageResolver.OnMessageDecodeFail += OnMessageDecodeFail;
         }
     
-        public void OnReceive(byte[] buffer, int offset, int byteTransferred) {
-            messageResolver.OnRawByteReceive(buffer, offset, byteTransferred);
+        public void OnReceive(Memory<byte> buffer) {
+            messageResolver.OnRawByteReceive(buffer);
         }
 
         public void OnMessageReceive(byte[] buffer) {
             Peer?.OnMessage(buffer);
         }
 
-        public void OnMessageDecodeFail(Exception ex, byte[] buffer) {
+        public void OnMessageDecodeFail(Exception ex, Memory<byte> buffer) {
             Console.WriteLine(ex);
             CPacket p = new CPacket();
-            p.Push(buffer, 0, buffer.Length);
+            p.Push(buffer);
             Send(p);
         }
 
@@ -53,7 +50,7 @@ namespace SocketServer {
             }
         }
 
-        public void OnSendCompleted(SocketAsyncEventArgs e) {
+        public void OnSendCompleted() {
             lock (sendingQueue) {
                 var lastSend = sendingQueue.Dequeue();
                 lastSend.Recycle();
