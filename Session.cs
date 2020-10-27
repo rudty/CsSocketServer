@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace SocketServer {
-    public class CUserToken {
+    public class Session {
         internal Socket Socket { get; set; }
 
         internal CNetworkService NetworkService { get; set; }
 
+        public readonly string SessionID;
+
         bool online = true;
 
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
-
         CMessageResolver messageResolver = new CMessageResolver();
 
-        public IPeer Peer { private get; set; }
+        public ISessionHandler SessionHandler { private get; set; }
 
-        public CUserToken() {
+        public Session() {
+            SessionID = Guid.NewGuid().ToString();
             messageResolver.OnMessageReceive += OnMessageReceive;
             messageResolver.OnMessageDecodeFail += OnMessageDecodeFail;
         }
@@ -28,7 +28,7 @@ namespace SocketServer {
         }
 
         public void OnMessageReceive(byte[] buffer) {
-            Peer?.OnMessage(buffer);
+            SessionHandler?.OnMessage(this, buffer);
         }
 
         public void OnMessageDecodeFail(Exception ex, Memory<byte> buffer) {
@@ -39,7 +39,7 @@ namespace SocketServer {
         }
 
         public void OnRemoved() {
-            Peer?.OnDisconnected();
+            SessionHandler?.OnDisconnected();
 
             lock (sendingQueue) {
                 online = false;
@@ -70,6 +70,7 @@ namespace SocketServer {
         public void Send(CPacket msg) {
             lock (sendingQueue) {
                 if (online) {
+                    msg.RecordSize();
                     sendingQueue.Enqueue(msg);
                     if (sendingQueue.Count == 1) {
                         DoSendQueue();

@@ -5,12 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SocketServer {
-    class CNetworkService {
-        public delegate void SessionHandler(CUserToken token);
+    public class CNetworkService {
+        public delegate void SessionHandler(Session token);
         public event SessionHandler OnSessionCreated;
 
         void OnNewClient(Socket client) {
-            CUserToken userToken = new CUserToken {
+            Session userToken = new Session {
                 Socket = client,
                 NetworkService = this
             };
@@ -19,7 +19,7 @@ namespace SocketServer {
             DoReceive(userToken);
         }
 
-        async void DoReceive(CUserToken token) {
+        async void DoReceive(Session token) {
             var clientSocket = token.Socket;
             var buf = CPacketBufferManager.Obtain();
             while (true) {
@@ -34,12 +34,12 @@ namespace SocketServer {
                 }
             }
         }
-        internal async void Send(CUserToken token, CPacket p) {
+        internal async void Send(Session token, CPacket p) {
             await token.Socket.SendAsync(p.Buffer, SocketFlags.None);
             token.OnSendCompleted();
         }
 
-        void CloseClient(CUserToken token) {
+        void CloseClient(Session token) {
             token.OnRemoved();
 
             try {

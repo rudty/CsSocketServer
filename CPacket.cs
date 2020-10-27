@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SocketServer {
     public class CPacket {
-        public IPeer Owner { get; private set; }
+        public ISessionHandler Owner { get; private set; }
         public Memory<byte> Buffer { get; private set; }
         public int Position { get; private set; } = 0;// Consts.HEADER_SIZE;
         public Int16 ProtocolId { get; private set; }
@@ -24,11 +24,15 @@ namespace SocketServer {
                 Buffer = null;
             }
         }
-        //public void recordSize() {
-        //    Int16 s = (Int16)(Position - Consts.HEADER_SIZE);
-        //    byte[] header = BitConverter.GetBytes(s);
-        //    header.CopyTo(Buffer, 0);
-        //}
+
+        public void RecordSize() {
+            var b = Buffer.Span;
+            var dataLength = Position - Consts.HEADER_SIZE;
+
+            b[0] = Consts.PACKET_BEGIN;
+            b[1] = (byte)(dataLength);
+            b[2] = (byte)(dataLength >> 8);
+        }
 
         public void Push(int data) {
             var b = Buffer.Span;

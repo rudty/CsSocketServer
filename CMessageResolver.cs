@@ -20,7 +20,7 @@ namespace SocketServer {
         void DecodeHeader(Span<byte> buffer) {
             const int minPacketSize = Consts.HEADER_SIZE;
             if (buffer.Length < minPacketSize) {
-                throw new Exception($"packet size must > {buffer.Length}");
+                throw new Exception($"packet size must > {Consts.HEADER_SIZE} receive:({buffer.Length})");
             }
 
             if (buffer[0] != Consts.PACKET_BEGIN) {
@@ -39,7 +39,7 @@ namespace SocketServer {
                 throw new Exception($"message size({len}) > messageBuffer size({messageBuffer.Length})");
             }
 
-            this.messageSize = len;
+            messageSize = len;
         }
 
         public void OnRawByteReceive(Memory<byte> buffer) {
