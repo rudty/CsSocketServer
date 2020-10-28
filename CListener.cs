@@ -18,12 +18,12 @@ namespace SocketServer {
                 SocketType.Stream,
                 ProtocolType.Tcp);
 
-        async void DoAccept() {
+        void DoAccept() {
             while (true) {
                 Socket client = null;
 
                 try {
-                    client = await serverSocket.AcceptAsync();
+                    client = serverSocket.Accept();
                 } catch (Exception e) {
                     Console.WriteLine(e);
                 }

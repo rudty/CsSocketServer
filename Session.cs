@@ -6,12 +6,11 @@ namespace SocketServer {
 
     public class Session {
         
-    
         internal Socket Socket { get; set; }
 
         internal CNetworkService NetworkService { get; set; }
 
-        public readonly SessionID SessionID;
+        public readonly string SessionID;
 
         bool online = true;
 
@@ -42,7 +41,7 @@ namespace SocketServer {
         }
 
         public void OnRemoved() {
-            SessionHandler?.OnDisconnected();
+            SessionHandler?.OnDisconnected(this);
 
             lock (sendingQueue) {
                 online = false;
