@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 
 namespace SocketServer {
+
     public class Session {
+        
+    
         internal Socket Socket { get; set; }
 
         internal CNetworkService NetworkService { get; set; }
 
-        public readonly string SessionID;
+        public readonly SessionID SessionID;
 
         bool online = true;
 
