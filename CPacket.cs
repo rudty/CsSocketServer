@@ -1,14 +1,21 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.CompilerServices;
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace SocketServer {
-    public class CPacket {
+    public class CPacket : IDisposable {
         public ISessionHandler Owner { get; private set; }
         public Memory<byte> Buffer { get; private set; }
-        public int Position { get; private set; } = 0;// Consts.HEADER_SIZE;
+        public int Position { get; private set; } = Consts.HEADER_SIZE;
         public Int16 ProtocolId { get; private set; }
+
+        public static CPacket New {
+            get {
+                return new CPacket();
+            }
+        }
 
         public CPacket() {
             Buffer = CPacketBufferManager.Obtain();
@@ -34,7 +41,10 @@ namespace SocketServer {
             b[2] = (byte)(dataLength >> 8);
         }
 
-        public void Push(int data) {
+
+        public static CPacket operator +(CPacket p, int v) => p.Push(v);
+
+        public CPacket Push(int data) {
             var b = Buffer.Span;
             int p = Position;
             b[p] = (byte)(data);
@@ -43,32 +53,41 @@ namespace SocketServer {
             b[p + 3] = (byte)(data >> 24);
 
             Position += sizeof(int);
+            return this;
         }
 
-        public void Push(byte data) {
+        public static CPacket operator +(CPacket p, byte v) => p.Push(v);
+        public CPacket Push(byte data) {
             var b = Buffer.Span;
             b[Position] = (data);
 
             Position += sizeof(byte);
+            return this;
         }
 
-        public void Push(byte[] data) {
+        public static CPacket operator +(CPacket p, byte[] v) => p.Push(v);
+        public CPacket Push(byte[] data) {
             Push(data, 0, data.Length);
+            return this;
         }
 
-        public void Push(Memory<byte> data) {
+        public static CPacket operator +(CPacket p, Memory<byte> v) => p.Push(v);
+        public CPacket Push(Memory<byte> data) {
             data.CopyTo(Buffer.Slice(Position));
+            return this;
         }
 
-        public void Push(byte[] data, int offset, int size) {
+        public CPacket Push(byte[] data, int offset, int size) {
             var b = Buffer.Span;
             data
                 .AsSpan(offset, size)
                 .CopyTo(b.Slice(Position));
             Position += size;
+            return this;
         }
 
-        public void Push(string s) {
+        public static CPacket operator +(CPacket p, string v) => p.Push(v);
+        public CPacket Push(string s) {
             var b = Buffer.Span;
             var len = (Int16)s.Length;
             b[Position + 0] = (byte)(len);
@@ -78,8 +97,11 @@ namespace SocketServer {
             byte[] byteString = Encoding.UTF8.GetBytes(s);
             byteString.CopyTo(b.Slice(Position));
             Position += byteString.Length;
+            return this;
         }
 
-
+        void IDisposable.Dispose() {
+            Recycle();
+        }
     }
 }

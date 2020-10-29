@@ -1,5 +1,5 @@
 ﻿namespace SocketServer {
-    class Consts {
+    public class Consts {
         public const int DEFAULT_ACCEPT_BACKLOG_SIZE = 511;
 
         const int MAX_CONNECTION_SIZE = 100;
