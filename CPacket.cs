@@ -1,14 +1,15 @@
 ﻿using Microsoft.VisualBasic.CompilerServices;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace SocketServer {
     public class CPacket : IDisposable {
         public ISessionHandler Owner { get; private set; }
-        public Memory<byte> Buffer { get; private set; }
-        public int Position { get; private set; } = Consts.HEADER_SIZE;
+        public Memory<byte> Buffer { get; internal set; }
+        public int Position { get; internal set; } = Consts.HEADER_SIZE;
         public Int16 ProtocolId { get; private set; }
 
         public static CPacket New {
@@ -97,6 +98,29 @@ namespace SocketServer {
             byte[] byteString = Encoding.UTF8.GetBytes(s);
             byteString.CopyTo(b.Slice(Position));
             Position += byteString.Length;
+            return this;
+        }
+
+
+        public CPacket Push<T>(T o) where T: struct {
+            var structType = o.GetType();
+            foreach (var f in structType.GetRuntimeFields()) {
+                var fieldType = f.FieldType;
+
+                if (fieldType == typeof(int)) {
+                    Push((int)f.GetValue(o));
+                    continue;
+                }
+
+                if (fieldType == typeof(string)) {
+                    Push(f.GetValue(o) as string);
+                    continue;
+                }
+
+                if (false == fieldType.IsPrimitive) {
+                    Push(o);
+                }
+            }
             return this;
         }
 
