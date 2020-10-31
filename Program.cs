@@ -7,11 +7,27 @@ using System.Threading.Tasks;
 namespace SocketServer {
     class Program {
 
+        struct TestObject {
+            public int a;
+            public string b;
+        }
 
+        struct NestedTestObject {
+            public int x;
+            public TestObject o;
+            //public System.Action c;
+        }
+
+        public void Push<T>(T o) where T : Enum {
+            return;  
+        }
         static void Main(string[] args) {
             //Server s = new Server();
             //s.SetOnPacketReceivedCallback(1, new PacketReceive());
             //s.ListenAndServe("0.0.0.0", 8080);
+            Console.WriteLine(new NestedTestObject().GetType().BaseType);
+            var a = new Action(() => { });
+            Console.WriteLine(a.GetType().BaseType);
         } 
      }
 }

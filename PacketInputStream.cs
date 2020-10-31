@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.FileIO;
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace SocketServer {
@@ -13,6 +15,14 @@ namespace SocketServer {
 
         public PacketInputStream(Memory<byte> b) {
             this.buffer = b;
+        }
+
+        public byte NextByte() {
+            var s = buffer.Span;
+            byte v = s[offset];
+            offset += 1;
+
+            return v;
         }
 
         public int NextInt() {
@@ -37,6 +47,35 @@ namespace SocketServer {
             offset += len;
 
             return r;
+        }
+
+        private object NextInternal(Type structType) {
+            var o = Activator.CreateInstance(structType);
+            foreach (var f in structType.GetRuntimeFields()) {
+                var fieldType = f.FieldType;
+                var elem = f.GetValue(o);
+
+                if (fieldType == typeof(int)) {
+                    f.SetValue(o, NextInt());
+                } else if (fieldType == typeof(byte)) {
+                    f.SetValue(o, NextByte());
+                } else if (fieldType == typeof(string)) {
+                    f.SetValue(o, NextString());
+                } else {
+                    if (fieldType.BaseType != typeof(ValueType)) {
+                        throw new ArgumentException($"{fieldType} not support type");
+                    }
+                    if (fieldType.IsPrimitive) {
+                        throw new ArgumentException($"{fieldType} not support type");
+                    }
+                    f.SetValue(o, NextInternal(fieldType));
+                }
+            }
+            return o;
+        }
+
+        public T Next<T>() where T: struct {
+            return (T)NextInternal(typeof(T));
         }
     }
 }

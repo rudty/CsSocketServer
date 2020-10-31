@@ -101,26 +101,46 @@ namespace SocketServer {
             return this;
         }
 
-
-        public CPacket Push<T>(T o) where T: struct {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T">value struct </typeparam>
+        /// <param name="o"></param>
+        /// <returns></returns>
+        private void PushInternal<T>(T o) {
             var structType = o.GetType();
             foreach (var f in structType.GetRuntimeFields()) {
                 var fieldType = f.FieldType;
-
-                if (fieldType == typeof(int)) {
-                    Push((int)f.GetValue(o));
-                    continue;
-                }
-
-                if (fieldType == typeof(string)) {
-                    Push(f.GetValue(o) as string);
-                    continue;
-                }
-
-                if (false == fieldType.IsPrimitive) {
-                    Push(o);
+                var elem = f.GetValue(o);
+                switch (elem) {
+                    case int v:
+                        Push(v);
+                        break;
+                    case byte v:
+                        Push(v);
+                        break;
+                    case string v:
+                        Push(v);
+                        break;
+                    default: {
+                            if (elem == null) {
+                                throw new ArgumentException($"{fieldType} cannot serialize null type");
+                            }
+                            if (fieldType.BaseType != typeof(ValueType)) {
+                                throw new ArgumentException($"{fieldType} not support type");
+                            }
+                            if (fieldType.IsPrimitive) {
+                                throw new ArgumentException($"{fieldType} not support type");
+                            }
+                            PushInternal(elem);
+                            break;
+                        }
                 }
             }
+        }
+
+        public CPacket Push<T>(T o) where T: struct {
+            PushInternal(o);
             return this;
         }
 
