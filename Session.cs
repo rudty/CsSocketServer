@@ -72,7 +72,6 @@ namespace SocketServer {
         public void Send(CPacket msg) {
             lock (sendingQueue) {
                 if (online) {
-                    msg.RecordSize();
                     sendingQueue.Enqueue(msg);
                     if (sendingQueue.Count == 1) {
                         DoSendQueue();

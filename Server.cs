@@ -7,7 +7,7 @@ namespace SocketServer {
         const int MAX_PACKET_SIZE = 100;
 
         public delegate bool OnSessionRegisterListener(Session session);
-        public delegate void OnUserMessageListener(Session session, string message, Memory<byte> buffer);
+        public delegate void OnUserMessageListener(Session session, string message, PacketInputStream packetInputStream);
 
         public event OnUserMessageListener UserMessageListener;
         public event OnSessionRegisterListener SessionRegisterListener;
@@ -23,7 +23,7 @@ namespace SocketServer {
             networkService.OnSessionCreated += OnNewClient; 
         }
         public void ListenAndServe(string host, int port) {
-            networkService.Listen(host, port);
+            networkService.ListenAndServe(host, port);
         }
 
         void OnNewClient(Session session) {
@@ -37,7 +37,7 @@ namespace SocketServer {
             //throw new NotImplementedException();
         }
 
-        void OnSessionRegister(Session session, Memory<byte> m) {
+        void OnSessionRegister(Session session, PacketInputStream p) {
             if (SessionRegisterListener(session)) {
                 lock (allSession) {
                     allSession.Add(session.SessionID, session);
@@ -46,12 +46,17 @@ namespace SocketServer {
         }
 
         void ISessionHandler.OnMessage(Session session, byte[] buffer) {
-            int header = buffer[0];
-            Memory<byte> m = buffer.AsMemory().Slice(1);
+            var packetInputStream = new PacketInputStream(buffer);
+            int header = packetInputStream.NextByte();
             switch (header) {
                 case 0:
-                    OnSessionRegister(session, m);
+                    OnSessionRegister(session, packetInputStream);
                     break;
+                case 1: {
+                        string message = packetInputStream.NextString();
+                        UserMessageListener(session, message, packetInputStream);
+                        break;
+                    }
             }
         }
 

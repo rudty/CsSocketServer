@@ -33,13 +33,15 @@ namespace SocketServer {
             }
         }
 
-        public void RecordSize() {
+        public Memory<byte> Packing() {
             var b = Buffer.Span;
             var dataLength = Position - Consts.HEADER_SIZE;
 
             b[0] = Consts.PACKET_BEGIN;
             b[1] = (byte)(dataLength);
             b[2] = (byte)(dataLength >> 8);
+
+            return Buffer.Slice(0, Position);
         }
 
 
@@ -126,7 +128,7 @@ namespace SocketServer {
                             if (elem == null) {
                                 throw new ArgumentException($"{fieldType} cannot serialize null type");
                             }
-                            if (fieldType.BaseType != typeof(ValueType)) {
+                            if (fieldType.BaseType != typeof(object)) {
                                 throw new ArgumentException($"{fieldType} not support type");
                             }
                             if (fieldType.IsPrimitive) {
@@ -139,7 +141,7 @@ namespace SocketServer {
             }
         }
 
-        public CPacket Push<T>(T o) where T: struct {
+        public CPacket Push<T>(T o) where T: class {
             PushInternal(o);
             return this;
         }

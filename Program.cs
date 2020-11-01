@@ -7,18 +7,18 @@ using System.Threading.Tasks;
 namespace SocketServer {
     class Program {
 
-        struct TestObject {
+        class TestObject {
             public int a;
             public string b;
         }
 
-        struct NestedTestObject {
+        class NestedTestObject {
             public int x;
             public TestObject o;
             //public System.Action c;
         }
 
-        public void Push<T>(T o) where T : Enum {
+        public void Push<T>(T o) where T : class {
             return;  
         }
         static void Main(string[] args) {

@@ -10,11 +10,11 @@ namespace SocketServer {
         Memory<byte> buffer;
         
         public PacketInputStream(byte[] b) {
-            this.buffer = b.AsMemory();
+            buffer = b.AsMemory();
         }
 
         public PacketInputStream(Memory<byte> b) {
-            this.buffer = b;
+            buffer = b;
         }
 
         public byte NextByte() {
@@ -62,7 +62,7 @@ namespace SocketServer {
                 } else if (fieldType == typeof(string)) {
                     f.SetValue(o, NextString());
                 } else {
-                    if (fieldType.BaseType != typeof(ValueType)) {
+                    if (fieldType.BaseType != typeof(object)) {
                         throw new ArgumentException($"{fieldType} not support type");
                     }
                     if (fieldType.IsPrimitive) {
@@ -74,7 +74,7 @@ namespace SocketServer {
             return o;
         }
 
-        public T Next<T>() where T: struct {
+        public T Next<T>() where T: class {
             return (T)NextInternal(typeof(T));
         }
     }

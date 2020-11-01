@@ -35,7 +35,7 @@ namespace SocketServer {
             }
         }
         internal async void Send(Session token, CPacket p) {
-            await token.Socket.SendAsync(p.Buffer, SocketFlags.None);
+            await token.Socket.SendAsync(p.Packing(), SocketFlags.None);
             token.OnSendCompleted();
         }
 
@@ -50,7 +50,7 @@ namespace SocketServer {
             token.Socket.Close();
         }
 
-        public void Listen(string host, int port) {
+        public void ListenAndServe(string host, int port) {
             var listener = new CListener();
             listener.OnNewClient += OnNewClient;
             listener.Start(host, port);
