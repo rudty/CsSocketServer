@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SocketServer {
+namespace SocketServer.Net.IO {
     class CPacketBufferManager {
         private static object mutex = new object();
-        private static Stack<Memory<byte>> pool = new Stack<Memory<byte>>();
+        private static readonly Stack<Memory<byte>> pool = new Stack<Memory<byte>>();
 
         internal static Memory<byte> Obtain() {
             const int bufSize = Consts.MESSAGE_BUFFER_SIZE;

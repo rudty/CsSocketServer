@@ -1,11 +1,8 @@
-﻿using Microsoft.VisualBasic.CompilerServices;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 
-namespace SocketServer {
+namespace SocketServer.Net.IO {
     public class CPacket : IDisposable {
         public ISessionHandler Owner { get; private set; }
         public Memory<byte> Buffer { get; internal set; }
@@ -104,10 +101,11 @@ namespace SocketServer {
         }
 
         /// <summary>
-        /// 
+        ///  사용자 형식의 클래스를 넣었을때 
+        ///  해당 클래스를 직렬화 시킬 수 있음
         /// </summary>
-        /// <typeparam name="T">value struct </typeparam>
-        /// <param name="o"></param>
+        /// <typeparam name="T">모든 클래스</typeparam>
+        /// <param name="o">모든 오브젝트</param>
         /// <returns></returns>
         private void PushInternal<T>(T o) {
             var structType = o.GetType();

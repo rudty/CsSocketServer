@@ -4,12 +4,12 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SocketServer {
+namespace SocketServer.Net {
 
     /// <summary>
-    /// 클라이언트가 연결을 시도헀을때 Accept를 하는 함수
+    /// 클라이언트가 연결을 시도헀을때 Accept 하는 클래스
     /// </summary>
-    class CListener {
+    class Listener {
         public delegate void NewClientHandler(Socket client);
         public event NewClientHandler OnNewClient;
 
@@ -18,12 +18,12 @@ namespace SocketServer {
                 SocketType.Stream,
                 ProtocolType.Tcp);
 
-        void DoAccept() {
+        async Task DoAccept() {
             while (true) {
                 Socket client = null;
 
                 try {
-                    client = serverSocket.Accept();
+                    client = await serverSocket.AcceptAsync();
                 } catch (Exception e) {
                     Console.WriteLine(e);
                 }
@@ -51,9 +51,9 @@ namespace SocketServer {
             }
         }
 
-        public void Start(string host, int port) {
+        public Task Start(string host, int port) {
             BindAndListen(host, port);
-            DoAccept();
+            return DoAccept();
         }
     }
 }

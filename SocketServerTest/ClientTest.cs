@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using SocketServer;
+﻿using SocketServer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Net.Sockets;
-using System.Net;
-using System.Threading.Tasks;
+using SocketServer.Net.IO;
 
 namespace SocketServerTest {
 
@@ -16,7 +11,7 @@ namespace SocketServerTest {
         public void TestEcho() {
             using var server = ServerTestHelper.TestServer;
             using var client = ServerTestHelper.TestClient;
-            server.UserMessageListener += (Session session, string message, PacketInputStream packetInputStream) => {
+            server.UserMessageListener += (Session session, string message, CPacketInputStream packetInputStream) => {
                 session.Send(CPacket.New.Push(message));
             };
             client.Send(
@@ -24,9 +19,14 @@ namespace SocketServerTest {
                     .Push((byte)1)
                     .Push("hello"));
             var res = client.ReceiveAny();
-            var istream = new PacketInputStream(res);
+            var istream = new CPacketInputStream(res);
             var body = istream.NextString();
-            Assert.IsTrue(body == "hello"); 
+            Assert.IsTrue(body == "hello");
+        }
+
+        [TestMethod]
+        public void TestLogin() {
+
         }
 
     }

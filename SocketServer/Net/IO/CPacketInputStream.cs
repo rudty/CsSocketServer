@@ -1,19 +1,17 @@
-﻿using Microsoft.VisualBasic.FileIO;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Reflection;
 using System.Text;
 
-namespace SocketServer {
-    public class PacketInputStream {
+namespace SocketServer.Net.IO {
+    public class CPacketInputStream {
         int offset = 0;
         Memory<byte> buffer;
         
-        public PacketInputStream(byte[] b) {
+        public CPacketInputStream(byte[] b) {
             buffer = b.AsMemory();
         }
 
-        public PacketInputStream(Memory<byte> b) {
+        public CPacketInputStream(Memory<byte> b) {
             buffer = b;
         }
 

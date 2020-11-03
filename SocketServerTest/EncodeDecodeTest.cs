@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using SocketServer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SocketServer.Net.IO;
 
 namespace SocketServerTest {
     [TestClass]
@@ -13,8 +14,8 @@ namespace SocketServerTest {
         const string str1 = "hello world";
         const string str2 = "good day";
 
-        PacketInputStream PacketToInputStream(CPacket p) {
-            return new PacketInputStream(p.Buffer.Slice(Consts.HEADER_SIZE));
+        CPacketInputStream PacketToInputStream(CPacket p) {
+            return new CPacketInputStream(p.Buffer.Slice(Consts.HEADER_SIZE));
         }
 
         [TestMethod]

@@ -1,18 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using SocketServer.Net;
+using SocketServer.Net.IO;
 
 namespace SocketServer {
     public class Server: ISessionHandler {
-        const int MAX_PACKET_SIZE = 100;
 
         public delegate bool OnSessionRegisterListener(Session session);
-        public delegate void OnUserMessageListener(Session session, string message, PacketInputStream packetInputStream);
+        public delegate void OnUserMessageListener(Session session, string message, CPacketInputStream packetInputStream);
 
         public event OnUserMessageListener UserMessageListener;
         public event OnSessionRegisterListener SessionRegisterListener;
 
-        readonly CNetworkService networkService = new CNetworkService();
+        readonly NetworkService networkService = new NetworkService();
 
         /// <summary>
         /// 전체 유저 session
@@ -22,6 +21,12 @@ namespace SocketServer {
         public Server() {
             networkService.OnSessionCreated += OnNewClient; 
         }
+
+        /// <summary>
+        /// 소켓 서버를 구동시킵니다
+        /// </summary>
+        /// <param name="host">허용할 아이피</param>
+        /// <param name="port">오픈 포트</param>
         public void ListenAndServe(string host, int port) {
             networkService.ListenAndServe(host, port);
         }
@@ -30,14 +35,17 @@ namespace SocketServer {
             session.SessionHandler = this;
         }
 
+        /// <summary>
+        /// 세션과 연결이 끊어졌을 때 수행
+        /// </summary>
+        /// <param name="session"></param>
         void ISessionHandler.OnDisconnected(Session session) {
             lock (allSession) {
                 allSession.Remove(session.SessionID);
             }
-            //throw new NotImplementedException();
         }
 
-        void OnSessionRegister(Session session, PacketInputStream p) {
+        void OnSessionRegister(Session session, CPacketInputStream p) {
             if (SessionRegisterListener(session)) {
                 lock (allSession) {
                     allSession.Add(session.SessionID, session);
@@ -46,7 +54,7 @@ namespace SocketServer {
         }
 
         void ISessionHandler.OnMessage(Session session, byte[] buffer) {
-            var packetInputStream = new PacketInputStream(buffer);
+            var packetInputStream = new CPacketInputStream(buffer);
             int header = packetInputStream.NextByte();
             switch (header) {
                 case 0:

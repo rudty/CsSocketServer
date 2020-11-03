@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using SocketServer.Net.IO;
+using SocketServer.Net;
 
 namespace SocketServer {
 
@@ -8,14 +10,14 @@ namespace SocketServer {
         
         internal Socket Socket { get; set; }
 
-        internal CNetworkService NetworkService { get; set; }
+        internal NetworkService NetworkService { get; set; }
 
         public readonly string SessionID;
 
         bool online = true;
 
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
-        CMessageResolver messageResolver = new CMessageResolver();
+        InputMessageResolver messageResolver = new InputMessageResolver();
 
         public ISessionHandler SessionHandler { private get; set; }
 

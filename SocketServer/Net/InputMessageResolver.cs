@@ -4,17 +4,38 @@ using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 
-namespace SocketServer {
-    
-    class CMessageResolver {
+namespace SocketServer.Net {
+
+    /// <summary>
+    /// TCP 로부터 패킷한번에 정상적으로 들어오지 않고 
+    /// 잘려서 들어왔을때 해결
+    /// 참고) 
+    /// 패킷 구조는 
+    /// byte[0] = PACKET_BEGIN
+    /// byte[1] = (byte)길이
+    /// byte[2] = (byte)(길이 << 8)
+    /// byte[3:] 부터는 길이만큼의 내용
+    /// </summary>
+    class InputMessageResolver {
         public delegate void CompletedMessageCallback(byte[] buffer);
         public delegate void MessageDecodeFailCallback(Exception ex, Memory<byte> buffer);
 
         public event CompletedMessageCallback OnMessageReceive;
         public event MessageDecodeFailCallback OnMessageDecodeFail;
 
-        int currentPosition = 0;
+        /// <summary>
+        /// 패킷을 읽었을때 전체 메시지 크기
+        /// </summary>
         int messageSize = -1;
+
+        /// <summary>
+        /// 지금까지 읽은 메세지 크기
+        /// </summary>
+        int currentPosition = 0;
+
+        /// <summary>
+        /// 읽은 메세지를 임시로 저장할 버퍼
+        /// </summary>
         readonly byte[] messageBuffer = new byte[Consts.MESSAGE_BUFFER_SIZE];
 
         void DecodeHeader(Span<byte> buffer) {
