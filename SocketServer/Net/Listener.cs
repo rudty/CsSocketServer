@@ -10,6 +10,8 @@ namespace SocketServer.Net {
     /// 클라이언트가 연결을 시도헀을때 Accept 하는 클래스
     /// </summary>
     class Listener {
+        static int DEFAULT_ACCEPT_BACKLOG_SIZE = 511;
+
         public delegate void NewClientHandler(Socket client);
         public event NewClientHandler OnNewClient;
 
@@ -44,7 +46,7 @@ namespace SocketServer.Net {
 
             try {
                 serverSocket.Bind(endPoint);
-                serverSocket.Listen(Consts.DEFAULT_ACCEPT_BACKLOG_SIZE);
+                serverSocket.Listen(DEFAULT_ACCEPT_BACKLOG_SIZE);
             } catch (Exception e) {
                 Console.WriteLine(e);
                 throw e;

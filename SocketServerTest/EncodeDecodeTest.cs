@@ -15,7 +15,7 @@ namespace SocketServerTest {
         const string str2 = "good day";
 
         CPacketInputStream PacketToInputStream(CPacket p) {
-            return new CPacketInputStream(p.Buffer.Slice(Consts.HEADER_SIZE));
+            return new CPacketInputStream(p.Buffer.Slice(CPacket.HEADER_SIZE));
         }
 
         [TestMethod]

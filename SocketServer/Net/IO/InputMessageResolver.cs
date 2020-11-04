@@ -4,7 +4,7 @@ using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 
-namespace SocketServer.Net {
+namespace SocketServer.Net.IO {
 
     /// <summary>
     /// TCP 로부터 패킷한번에 정상적으로 들어오지 않고 
@@ -36,15 +36,16 @@ namespace SocketServer.Net {
         /// <summary>
         /// 읽은 메세지를 임시로 저장할 버퍼
         /// </summary>
-        readonly byte[] messageBuffer = new byte[Consts.MESSAGE_BUFFER_SIZE];
+
+        readonly byte[] messageBuffer = new byte[CPacket.MESSAGE_BUFFER_SIZE];
 
         void DecodeHeader(Span<byte> buffer) {
-            const int minPacketSize = Consts.HEADER_SIZE;
+            const int minPacketSize = CPacket.HEADER_SIZE;
             if (buffer.Length < minPacketSize) {
-                throw new Exception($"packet size must > {Consts.HEADER_SIZE} receive:({buffer.Length})");
+                throw new Exception($"packet size must > {CPacket.HEADER_SIZE} receive:({buffer.Length})");
             }
 
-            if (buffer[0] != Consts.PACKET_BEGIN) {
+            if (buffer[0] != CPacket.PACKET_BEGIN) {
                 throw new Exception($"packet header[0] error {buffer[0]}");
             }
 
@@ -67,7 +68,7 @@ namespace SocketServer.Net {
             try {
                 if (messageSize == -1) {
                     DecodeHeader(buffer.Span);
-                    buffer = buffer.Slice(Consts.HEADER_SIZE);
+                    buffer = buffer.Slice(CPacket.HEADER_SIZE);
                 }
 
                 int maxRemainByte = messageBuffer.Length - currentPosition;
@@ -95,7 +96,7 @@ namespace SocketServer.Net {
         }
 
         private void ClearBuffer() {
-            for (int i = 0; i < Consts.HEADER_SIZE; ++i) {
+            for (int i = 0; i < CPacket.HEADER_SIZE; ++i) {
                 messageBuffer[i] = 0;
             }
             currentPosition = 0;

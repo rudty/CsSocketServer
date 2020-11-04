@@ -3,12 +3,13 @@ using System.Collections.Generic;
 
 namespace SocketServer.Net.IO {
     class CPacketBufferManager {
+        const int ALLOCATE_BUFFER_COUNT = 5;
         private static object mutex = new object();
         private static readonly Stack<Memory<byte>> pool = new Stack<Memory<byte>>();
 
         internal static Memory<byte> Obtain() {
-            const int bufSize = Consts.MESSAGE_BUFFER_SIZE;
-            const int bufCount = Consts.ALLOCATE_BUFFER_COUNT;
+            const int bufSize = CPacket.MESSAGE_BUFFER_SIZE;
+            const int bufCount = ALLOCATE_BUFFER_COUNT;
 
             lock (mutex) {
                 if (pool.Count == 0) {
@@ -22,8 +23,8 @@ namespace SocketServer.Net.IO {
         }
 
         internal static void Recycle(Memory<byte> buffer) {
-            if (buffer.Length != Consts.MESSAGE_BUFFER_SIZE) {
-                throw new ArgumentException($"${nameof(buffer)} Length must  {Consts.MESSAGE_BUFFER_SIZE} but {buffer.Length}");
+            if (buffer.Length != CPacket.MESSAGE_BUFFER_SIZE) {
+                throw new ArgumentException($"${nameof(buffer)} Length must  {CPacket.MESSAGE_BUFFER_SIZE} but {buffer.Length}");
             }
             lock (mutex) {
                 pool.Push(buffer); 

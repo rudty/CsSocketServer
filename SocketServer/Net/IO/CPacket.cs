@@ -4,9 +4,13 @@ using System.Text;
 
 namespace SocketServer.Net.IO {
     public class CPacket : IDisposable {
+        public const int PACKET_BEGIN = 0x8F;
+        public const int HEADER_SIZE = 3;
+        public const int MESSAGE_BUFFER_SIZE = 1024;
+
         public ISessionHandler Owner { get; private set; }
         public Memory<byte> Buffer { get; internal set; }
-        public int Position { get; internal set; } = Consts.HEADER_SIZE;
+        public int Position { get; internal set; } = HEADER_SIZE;
         public Int16 ProtocolId { get; private set; }
 
         public static CPacket New {
@@ -32,9 +36,9 @@ namespace SocketServer.Net.IO {
 
         public Memory<byte> Packing() {
             var b = Buffer.Span;
-            var dataLength = Position - Consts.HEADER_SIZE;
+            var dataLength = Position - HEADER_SIZE;
 
-            b[0] = Consts.PACKET_BEGIN;
+            b[0] = PACKET_BEGIN;
             b[1] = (byte)(dataLength);
             b[2] = (byte)(dataLength >> 8);
 
