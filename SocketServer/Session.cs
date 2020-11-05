@@ -14,6 +14,10 @@ namespace SocketServer {
 
         public readonly string SessionID;
 
+        public bool IsAuthenticated { get; internal set; } = false;
+
+        public object UserData { get; set; }
+
         bool online = true;
 
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
@@ -36,10 +40,7 @@ namespace SocketServer {
         }
 
         public void OnMessageDecodeFail(Exception ex, Memory<byte> buffer) {
-            Console.WriteLine(ex);
-            CPacket p = new CPacket();
-            p.Push(buffer);
-            Send(p);
+            SessionHandler?.OnDecodeFail(this, ex, buffer); 
         }
 
         public void OnRemoved() {

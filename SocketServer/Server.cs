@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SocketServer.Net;
 using SocketServer.Net.IO;
 
@@ -6,10 +7,11 @@ namespace SocketServer {
     public class Server: ISessionHandler {
 
         public delegate bool OnSessionRegisterListener(Session session);
-        public delegate void OnUserMessageListener(Session session, string message, CPacketInputStream packetInputStream);
+        public delegate void OnUserMessageListener(Session session, CPacketInputStream packetInputStream);
 
-        public event OnUserMessageListener UserMessageListener;
         public event OnSessionRegisterListener SessionRegisterListener;
+
+        Dictionary<string, OnUserMessageListener> messageListeners = new Dictionary<string, OnUserMessageListener>(); 
 
         readonly NetworkService networkService = new NetworkService();
 
@@ -62,13 +64,22 @@ namespace SocketServer {
                     break;
                 case 1: {
                         string message = packetInputStream.NextString();
-                        UserMessageListener(session, message, packetInputStream);
+                        if (messageListeners.TryGetValue(message, out var listener)) {
+                            listener(session, packetInputStream);
+                        }
                         break;
                     }
             }
         }
 
         void ISessionHandler.OnSendCompleted(Session session) {
+        }
+
+        void ISessionHandler.OnDecodeFail(Session session, Exception ex, Memory<byte> buffer) {
+            Console.WriteLine(ex);
+            CPacket p = new CPacket();
+            p.Push(buffer);
+            session.Send(p);
         }
     }
 }
