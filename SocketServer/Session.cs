@@ -23,7 +23,7 @@ namespace SocketServer {
         Queue<CPacket> sendingQueue = new Queue<CPacket>();
         InputMessageResolver messageResolver = new InputMessageResolver();
 
-        public ISessionHandler SessionHandler { private get; set; }
+        public ISessionEventListener SessionHandler { private get; set; }
 
         public Session() {
             SessionID = Guid.NewGuid().ToString();
@@ -36,11 +36,11 @@ namespace SocketServer {
         }
 
         public void OnMessageReceive(byte[] buffer) {
-            SessionHandler?.OnMessage(this, buffer);
+            SessionHandler?.OnMessageReceived(this, buffer);
         }
 
         public void OnMessageDecodeFail(Exception ex, Memory<byte> buffer) {
-            SessionHandler?.OnDecodeFail(this, ex, buffer); 
+            SessionHandler?.OnDataDecodeFail(this, ex, buffer); 
         }
 
         public void OnRemoved() {

@@ -4,7 +4,7 @@ using SocketServer.Net;
 using SocketServer.Net.IO;
 
 namespace SocketServer {
-    public class Server: ISessionHandler {
+    public class Server: ISessionEventListener {
 
         public delegate bool OnSessionRegisterListener(Session session);
         public delegate void OnUserMessageListener(Session session, CPacketInputStream packetInputStream);
@@ -41,7 +41,7 @@ namespace SocketServer {
         /// 세션과 연결이 끊어졌을 때 수행
         /// </summary>
         /// <param name="session"></param>
-        void ISessionHandler.OnDisconnected(Session session) {
+        void ISessionEventListener.OnDisconnected(Session session) {
             lock (allSession) {
                 allSession.Remove(session.SessionID);
             }
@@ -55,7 +55,7 @@ namespace SocketServer {
             }
         }
 
-        void ISessionHandler.OnMessage(Session session, byte[] buffer) {
+        void ISessionEventListener.OnMessageReceived(Session session, byte[] buffer) {
             var packetInputStream = new CPacketInputStream(buffer);
             int header = packetInputStream.NextByte();
             switch (header) {
@@ -72,10 +72,10 @@ namespace SocketServer {
             }
         }
 
-        void ISessionHandler.OnSendCompleted(Session session) {
+        void ISessionEventListener.OnSendCompleted(Session session) {
         }
 
-        void ISessionHandler.OnDecodeFail(Session session, Exception ex, Memory<byte> buffer) {
+        void ISessionEventListener.OnDataDecodeFail(Session session, Exception ex, Memory<byte> buffer) {
             Console.WriteLine(ex);
             CPacket p = new CPacket();
             p.Push(buffer);

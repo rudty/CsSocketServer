@@ -27,22 +27,20 @@ namespace SocketServer.Net {
         /// <param name="session">계속 입력을 받을 세션</param>
         async void DoReceive(Session session) {
             var clientSocket = session.Socket;
-            var buf = CPacketBufferManager.Obtain();
-            while (true) {
-                try {
-                    var len = await clientSocket.ReceiveAsync(buf, SocketFlags.None);
-                    if (len > 0) {
-                        session.OnReceive(buf.Slice(0, len));
+            var packetReader = new PacketReader(clientSocket);
+            try {
+                while (true) {
+                    var t = await packetReader.ReceiveAsync();
+                    if (t == null) {
+                        break;
                     }
-                    if (len == 0) {
-                        Console.WriteLine("0");
-                    }
-                } catch (Exception e) {
-                    Console.WriteLine(e);
-                    CloseClient(session);
+                    //session.OnMessageReceive();
                 }
+            } catch (Exception e) {
+                Console.WriteLine(e);
             }
         }
+
         internal async void Send(Session session, CPacket p) {
             await session.Socket.SendAsync(p.Packing(), SocketFlags.None);
             session.OnSendCompleted();
