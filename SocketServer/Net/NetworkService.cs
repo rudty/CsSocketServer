@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using SocketServer.Net.IO;
-
 namespace SocketServer.Net {
 
     /// <summary>
@@ -12,13 +12,9 @@ namespace SocketServer.Net {
         public event SessionHandler OnSessionCreated;
 
         void OnNewClient(Socket client) {
-            Session session = new Session {
-                Socket = client,
-                NetworkService = this
-            };
-
+            Session session = new Session(client, this);
             OnSessionCreated(session);
-            DoReceive(session);
+            Task.Run(() => DoReceive(session));
         }
 
         /// <summary>
@@ -27,23 +23,31 @@ namespace SocketServer.Net {
         /// <param name="session">계속 입력을 받을 세션</param>
         async void DoReceive(Session session) {
             var clientSocket = session.Socket;
-            var packetReader = new PacketReader(clientSocket);
+            using var networkStream = new NetworkStream(clientSocket);
+            var packetReader = new PacketReader(networkStream);
             try {
                 while (true) {
-                    var t = await packetReader.ReceiveAsync();
-                    if (t == null) {
+                    var p = await packetReader.ReceiveAsync();
+                    if (p == null) {
                         break;
                     }
-                    //session.OnMessageReceive();
+                    session.OnPacketReceive(p);
                 }
             } catch (Exception e) {
                 Console.WriteLine(e);
             }
+            CloseClient(session);
         }
 
         internal async void Send(Session session, CPacket p) {
-            await session.Socket.SendAsync(p.Packing(), SocketFlags.None);
-            session.OnSendCompleted();
+            var m = p.Packing();
+            while (true) {
+                int len = await session.Socket.SendAsync(m, SocketFlags.None);
+                if (len == m.Length) {
+                    break;
+                }
+                m = m.Slice(0, len);
+            }
         }
 
         void CloseClient(Session session) {

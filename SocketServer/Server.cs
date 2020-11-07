@@ -34,7 +34,7 @@ namespace SocketServer {
         }
 
         void OnNewClient(Session session) {
-            session.SessionHandler = this;
+            session.OnSessionEventListener = this;
         }
 
         /// <summary>

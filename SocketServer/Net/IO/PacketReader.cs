@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace SocketServer.Net.IO {
 
@@ -19,10 +20,10 @@ namespace SocketServer.Net.IO {
     /// byte[3:] 부터는 길이만큼의 내용
     /// </summary>
     class PacketReader {
-        readonly Socket socket;
+        readonly Stream stream;
 
-        public PacketReader(Socket socket) {
-            this.socket = socket;
+        public PacketReader(Stream stream) {
+            this.stream = stream;
         }
 
         /// <summary>
@@ -54,12 +55,19 @@ namespace SocketServer.Net.IO {
         }
 
 
+        /// <summary>
+        /// 클라이언트로부터 패킷을 받습니다
+        /// length 까지 받으며 받지 못한다면 계속 받기를 시도합니다
+        /// </summary>
+        /// <param name="buf">저장할 버퍼</param>
+        /// <param name="position">읽기를 시작할 위치</param>
+        /// <param name="length">길이</param>
+        /// <returns>정상적으로 읽기를 완료하였음</returns>
         async ValueTask<bool> ReceiveNext(Memory<byte> buf, int position, int length) {
-            // 처음 HEADER를 받을떄 최대 header 까지만 받게
             while (position < length) {
-                var headerBuffer = buf.Slice(position, length - position);
-                int len = await socket.ReceiveAsync(headerBuffer, SocketFlags.None);
+                var b = buf[position..length];
 
+                int len = await stream.ReadAsync(b);
                 if (len <= 0) {
                     // 클라이언트에서 연결을 끊었을때
                     return false;
@@ -71,23 +79,34 @@ namespace SocketServer.Net.IO {
             return true;
         } 
 
+        /// <summary>
+        /// 클라이언트로부터 패킷을 읽습니다
+        /// 패킷은 헤더 + 본문으로 이루어져
+        /// 두번 읽게 됩니다
+        /// </summary>
+        /// <returns>읽은 완전한 패킷</returns>
         public async Task<CPacket> ReceiveAsync() {
             var buf = CPacketBufferManager.Obtain();
-            if (false == await ReceiveNext(buf, 0, CPacket.HEADER_SIZE)) {
-                return null;
+            try {
+                if (false == await ReceiveNext(buf, 0, CPacket.HEADER_SIZE)) {
+                    return null;
+                }
+
+                // 처음 HEADER를 받을떄 최대 header 까지만 받게
+                // 총 읽을 길이 (메세지 길이 + 헤더 길이)
+                int messageSize = DecodeHeader(buf.Span);
+                messageSize += CPacket.HEADER_SIZE;
+
+
+                if (false == await ReceiveNext(buf, CPacket.HEADER_SIZE, messageSize)) {
+                    return null;
+                }
+
+                return new CPacket(buf);
+            } catch (Exception e) {
+                CPacketBufferManager.Recycle(buf);
+                throw e;
             }
-
-            // 처음 HEADER를 받을떄 최대 header 까지만 받게
-            // 총 읽을 길이 (메세지 길이 + 헤더 길이)
-            int messageSize = DecodeHeader(buf.Span);
-            messageSize += CPacket.HEADER_SIZE;
-
-
-            if (false == await ReceiveNext(buf, CPacket.HEADER_SIZE, messageSize)) {
-                return null;
-            }
-      
-            return new CPacket(buf);
         }
     }
 }

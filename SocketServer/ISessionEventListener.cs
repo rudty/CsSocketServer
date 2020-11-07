@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SocketServer.Net.IO;
+using System;
+using System.Threading.Tasks;
 
 namespace SocketServer {
     public interface ISessionEventListener {
-        void OnMessageReceived(Session session, byte[] buffer);
+        Task OnPacketReceived(Session session, CPacket buffer);
 
-        void OnDataDecodeFail(Session session, Exception ex, Memory<byte> buffer);
-        
-        void OnDisconnected(Session session);
-        void OnSendCompleted(Session session);
+        Task OnPacketDecodeFail(Session session, Exception ex, Memory<byte> buffer);
+
+        Task OnDisconnected(Session session);
+        Task OnSendCompleted(Session session);
     }
 }

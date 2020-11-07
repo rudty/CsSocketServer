@@ -3,84 +3,66 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using SocketServer.Net.IO;
 using SocketServer.Net;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace SocketServer {
 
+    /// <summary>
+    /// 접속 1 소켓 당 1개 생성하는 세션 관리 객체
+    /// 
+    /// </summary>
     public class Session {
         
-        internal Socket Socket { get; set; }
+        internal Socket Socket { get; private set; }
 
-        internal NetworkService NetworkService { get; set; }
+        internal NetworkService NetworkService { get; private set; }
 
         public readonly string SessionID;
-
-        public bool IsAuthenticated { get; internal set; } = false;
 
         public object UserData { get; set; }
 
         bool online = true;
 
-        Queue<CPacket> sendingQueue = new Queue<CPacket>();
-        InputMessageResolver messageResolver = new InputMessageResolver();
+        MessageTaskRunner sessionRunner = new MessageTaskRunner();
 
-        public ISessionEventListener SessionHandler { private get; set; }
+        public ISessionEventListener OnSessionEventListener { private get; set; }
 
-        public Session() {
+        public Session(Socket socket, NetworkService networkService) {
             SessionID = Guid.NewGuid().ToString();
-            messageResolver.OnMessageReceive += OnMessageReceive;
-            messageResolver.OnMessageDecodeFail += OnMessageDecodeFail;
+            this.Socket = socket;
+            this.NetworkService = networkService;
         }
-    
-        public void OnReceive(Memory<byte> buffer) {
-            messageResolver.OnRawByteReceive(buffer);
-        }
-
-        public void OnMessageReceive(byte[] buffer) {
-            SessionHandler?.OnMessageReceived(this, buffer);
+ 
+        public void OnPacketReceive(CPacket message) {
+            var c = OnSessionEventListener;
+            if (c != null) {
+                sessionRunner.Add(() => c.OnPacketReceived(this, message));
+            }
         }
 
         public void OnMessageDecodeFail(Exception ex, Memory<byte> buffer) {
-            SessionHandler?.OnDataDecodeFail(this, ex, buffer); 
+            var c = OnSessionEventListener;
+            if (c != null) {
+                sessionRunner.Add(() => c.OnPacketDecodeFail(this, ex, buffer));
+            }
         }
 
         public void OnRemoved() {
-            SessionHandler?.OnDisconnected(this);
+            online = false;
 
-            lock (sendingQueue) {
-                online = false;
-                while (sendingQueue.Count > 0) {
-                    var p = sendingQueue.Dequeue();
-                    p.Recycle();
-                }
+            var c = OnSessionEventListener;
+            if (c != null) {
+                sessionRunner.Add(() => c.OnDisconnected(this));
             }
         }
 
-        public void OnSendCompleted() {
-            lock (sendingQueue) {
-                var lastSend = sendingQueue.Dequeue();
-                lastSend.Recycle();
-                DoSendQueue();
-            }
-        }
-
-        void DoSendQueue() {
-            if (online) {
-                if (sendingQueue.Count > 0) {
-                    var msg = sendingQueue.Peek();
-                    NetworkService.Send(this, msg);
-                }
-            }
-        }
-
-        public void Send(CPacket msg) {
-            lock (sendingQueue) {
+        public void Send(CPacket p) {
+            sessionRunner.Add(() => {
                 if (online) {
-                    sendingQueue.Enqueue(msg);
-                    if (sendingQueue.Count == 1) {
-                        DoSendQueue();
-                    }
+                    NetworkService.Send(this, p);
                 }
-            }
+            });
         }
     }
 }
