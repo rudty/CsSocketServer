@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using SocketServer.Net;
 using SocketServer.Net.IO;
+using System.Threading.Tasks;
 
 namespace SocketServer {
     public class Server: ISessionEventListener {
 
         public delegate bool OnSessionRegisterListener(Session session);
-        public delegate void OnUserMessageListener(Session session, CPacketInputStream packetInputStream);
+        public delegate void OnUserMessageListener(Session session, CPacket packetInputStream);
 
         public event OnSessionRegisterListener SessionRegisterListener;
 
@@ -37,17 +38,40 @@ namespace SocketServer {
             session.OnSessionEventListener = this;
         }
 
+        ///
+        public void AddEventListener(string k, OnUserMessageListener l) {
+            if (l != null) {
+                lock (messageListeners) {
+                    //TODO 클래스에 담는다던가 해서 두번 검색하는거 최적화 필요
+                    if (messageListeners.ContainsKey(k)) {
+                        messageListeners[k] += l;
+                    } else {
+                        messageListeners.Add(k, l);
+                    }
+                }
+            }
+        }
+
+        public void RemoveEventListener(string k, OnUserMessageListener l) {
+            lock (messageListeners) {
+                if (messageListeners.ContainsKey(k)) {
+                    messageListeners[k] -= l;
+                }
+            }
+        }
+
         /// <summary>
         /// 세션과 연결이 끊어졌을 때 수행
         /// </summary>
         /// <param name="session"></param>
-        void ISessionEventListener.OnDisconnected(Session session) {
+        Task ISessionEventListener.OnDisconnected(Session session) {
             lock (allSession) {
                 allSession.Remove(session.SessionID);
             }
+            return Task.CompletedTask;
         }
 
-        void OnSessionRegister(Session session, CPacketInputStream p) {
+        void OnSessionRegister(Session session, CPacket p) {
             if (SessionRegisterListener(session)) {
                 lock (allSession) {
                     allSession.Add(session.SessionID, session);
@@ -55,31 +79,40 @@ namespace SocketServer {
             }
         }
 
-        void ISessionEventListener.OnMessageReceived(Session session, byte[] buffer) {
-            var packetInputStream = new CPacketInputStream(buffer);
-            int header = packetInputStream.NextByte();
+        Task ISessionEventListener.OnPacketReceived(Session session, CPacket p) {
+            int header = p.NextByte();
             switch (header) {
                 case 0:
-                    OnSessionRegister(session, packetInputStream);
+                    OnSessionRegister(session, p);
                     break;
                 case 1: {
-                        string message = packetInputStream.NextString();
-                        if (messageListeners.TryGetValue(message, out var listener)) {
-                            listener(session, packetInputStream);
+                        string message = p.NextString();
+                        bool exists;
+                        OnUserMessageListener listener;
+                        lock (messageListeners) {
+                            exists = messageListeners.TryGetValue(message, out listener);
                         }
+
+                        if (exists) {
+                            listener(session, p);
+                        }
+
                         break;
                     }
             }
+            return Task.CompletedTask;
         }
 
-        void ISessionEventListener.OnSendCompleted(Session session) {
-        }
-
-        void ISessionEventListener.OnDataDecodeFail(Session session, Exception ex, Memory<byte> buffer) {
+        Task ISessionEventListener.OnPacketDecodeFail(Session session, Exception ex, Memory<byte> buffer) {
             Console.WriteLine(ex);
             CPacket p = new CPacket();
-            p.Push(buffer);
+            p.Add(buffer);
             session.Send(p);
+            return Task.CompletedTask;
+        }
+
+        Task ISessionEventListener.OnSendCompleted(Session session) {
+            return Task.CompletedTask;
         }
     }
 }

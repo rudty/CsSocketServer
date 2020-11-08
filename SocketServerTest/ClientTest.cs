@@ -11,17 +11,16 @@ namespace SocketServerTest {
         public void TestEcho() {
             using var server = ServerTestHelper.TestServer;
             using var client = ServerTestHelper.TestClient;
-            server.UserMessageListener += (Session session, string message, CPacketInputStream packetInputStream) => {
-                session.Send(CPacket.New.Push(message));
-            };
+            server.AddEventListener("hello", (Session session, CPacket p) => {
+                session.Send(CPacket.New.Add("hi"));
+            });
             client.Send(
                 CPacket.New
-                    .Push((byte)1)
-                    .Push("hello"));
-            var res = client.ReceiveAny();
-            var istream = new CPacketInputStream(res);
-            var body = istream.NextString();
-            Assert.IsTrue(body == "hello");
+                    .Add((byte)1)
+                    .Add("hello"));
+            var res = client.ReceivePacket();
+            var body = res.NextString();
+            Assert.IsTrue(body == "hi");
         }
 
         [TestMethod]

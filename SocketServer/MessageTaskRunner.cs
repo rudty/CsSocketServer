@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SocketServer {
 
-    class MessageTaskRunner {
-        bool work = false;
+    public class MessageTaskRunner {
+        int work = 0;
         readonly BlockingCollection<Func<Task>> actions = new BlockingCollection<Func<Task>>();
 
         async void DoTask() {
@@ -16,10 +17,8 @@ namespace SocketServer {
                 } catch(Exception e) {
                     Console.WriteLine(e);
                 }
-            }        
-            lock(this) {
-                work = false;
             }
+            Interlocked.Exchange(ref work, 0);
         }
 
         public void Add(Action fn) {
@@ -31,12 +30,16 @@ namespace SocketServer {
 
         public void Add(Func<Task> fn) {
             actions.Add(fn);
-            lock (this) {
-                if (work == false) {
-                    work = true;
-                    Task.Run(DoTask);
-                }
+            if (Interlocked.Increment(ref work) == 1) {
+                Task.Run(DoTask);
             }
+        }
+
+        /// <summary>
+        /// 현재 큐에 들어간 모든 함수가 실행이 끝날때까지 기다립니다
+        /// </summary>
+        public Task Wait() {
+            return Task.Run(DoTask);
         }
     }
 

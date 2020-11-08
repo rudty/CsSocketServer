@@ -14,17 +14,12 @@ namespace SocketServerTest {
         const string str1 = "hello world";
         const string str2 = "good day";
 
-        CPacketInputStream PacketToInputStream(CPacket p) {
-            return new CPacketInputStream(p.Buffer.Slice(CPacket.HEADER_SIZE));
-        }
-
         [TestMethod]
         public void CheckInt1() {
             CPacket p = new CPacket();
-            p.Push(value1);
+            p.Add(value1);
 
-            var stream = PacketToInputStream(p);
-            var o = stream.NextInt();
+            var o = p.NextInt();
             Assert.AreEqual(value1, o);
         }
 
@@ -32,24 +27,22 @@ namespace SocketServerTest {
         [TestMethod]
         public void CheckInt2() {
             CPacket p = new CPacket();
-            p.Push(value1);
-            p.Push(value2);
+            p.Add(value1);
+            p.Add(value2);
 
-            var stream = PacketToInputStream(p);
-            var o = stream.NextInt();
+            var o = p.NextInt();
             Assert.AreEqual(value1, o);
 
-            o = stream.NextInt();
+            o = p.NextInt();
             Assert.AreEqual(value2, o);
         }
 
         [TestMethod]
         public void CheckString1() {
             CPacket p = new CPacket();
-            p.Push(str1);
+            p.Add(str1);
 
-            var stream = PacketToInputStream(p);
-            var o = stream.NextString();
+            var o = p.NextString();
             Assert.AreEqual(str1, o);
 
         }
@@ -57,36 +50,34 @@ namespace SocketServerTest {
         [TestMethod]
         public void CheckString2() {
             CPacket p = new CPacket();
-            p.Push(str1);
-            p.Push(str2);
+            p.Add(str1);
+            p.Add(str2);
 
-            var stream = PacketToInputStream(p);
-            var o = stream.NextString();
+            var o = p.NextString();
             Assert.AreEqual(str1, o);
 
-            o = stream.NextString();
+            o = p.NextString();
             Assert.AreEqual(str2, o);
         }
 
         [TestMethod]
         public void CheckIntString1() {
             var p = CPacket.New
-                .Push(value1)
-                .Push(str1)
-                .Push(value2)
-                .Push(str2);
+                .Add(value1)
+                .Add(str1)
+                .Add(value2)
+                .Add(str2);
 
-            var stream = PacketToInputStream(p);
-            int i_out = stream.NextInt();
+            int i_out = p.NextInt();
             Assert.AreEqual(value1, i_out);
 
-            string s_out = stream.NextString();
+            string s_out = p.NextString();
             Assert.AreEqual(str1, s_out);
 
-            i_out = stream.NextInt();
+            i_out = p.NextInt();
             Assert.AreEqual(value2, i_out);
 
-            s_out = stream.NextString();
+            s_out = p.NextString();
             Assert.AreEqual(str2, s_out);
         }
 
@@ -102,13 +93,12 @@ namespace SocketServerTest {
             t.a = value1;
             t.b = str1;
 
-            p.Push(t);
+            p.Add(t);
 
-            var stream = PacketToInputStream(p);
-            int i_out = stream.NextInt();
+            int i_out = p.NextInt();
             Assert.AreEqual(value1, i_out);
 
-            string s_out = stream.NextString();
+            string s_out = p.NextString();
             Assert.AreEqual(str1, s_out);
         }
 
@@ -126,17 +116,15 @@ namespace SocketServerTest {
             o.o.b = str1;
 
             var p = CPacket.New
-                    .Push(o);
+                    .Add(o);
 
-            var stream = PacketToInputStream(p);
-
-            int i_out = stream.NextInt();
+            int i_out = p.NextInt();
             Assert.AreEqual(value1, i_out);
 
-            i_out = stream.NextInt();
+            i_out = p.NextInt();
             Assert.AreEqual(value2, i_out);
 
-            string s_out = stream.NextString();
+            string s_out = p.NextString();
             Assert.AreEqual(str1, s_out);
         }
 
@@ -151,11 +139,9 @@ namespace SocketServerTest {
             };
 
             var p = CPacket.New
-                    .Push(o);
+                    .Add(o);
 
-            var stream = PacketToInputStream(p);
-
-            var o_out = stream.Next<NestedTestObject>();
+            var o_out = p.Next<NestedTestObject>();
             Assert.AreEqual(o_out.x, value1);
             Assert.AreEqual(o_out.o.a, value2);
             Assert.AreEqual(o_out.o.b, str1);

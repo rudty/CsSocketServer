@@ -24,7 +24,8 @@ namespace SocketServer {
 
         bool online = true;
 
-        MessageTaskRunner sessionRunner = new MessageTaskRunner();
+        MessageTaskRunner sessionTaskExecutor = new MessageTaskRunner();
+        MessageTaskRunner sendExecutor = new MessageTaskRunner();
 
         public ISessionEventListener OnSessionEventListener { private get; set; }
 
@@ -37,14 +38,14 @@ namespace SocketServer {
         public void OnPacketReceive(CPacket message) {
             var c = OnSessionEventListener;
             if (c != null) {
-                sessionRunner.Add(() => c.OnPacketReceived(this, message));
+                sessionTaskExecutor.Add(() => c.OnPacketReceived(this, message));
             }
         }
 
         public void OnMessageDecodeFail(Exception ex, Memory<byte> buffer) {
             var c = OnSessionEventListener;
             if (c != null) {
-                sessionRunner.Add(() => c.OnPacketDecodeFail(this, ex, buffer));
+                sessionTaskExecutor.Add(() => c.OnPacketDecodeFail(this, ex, buffer));
             }
         }
 
@@ -53,12 +54,12 @@ namespace SocketServer {
 
             var c = OnSessionEventListener;
             if (c != null) {
-                sessionRunner.Add(() => c.OnDisconnected(this));
+                sessionTaskExecutor.Add(() => c.OnDisconnected(this));
             }
         }
 
         public void Send(CPacket p) {
-            sessionRunner.Add(() => {
+            sendExecutor.Add(() => {
                 if (online) {
                     NetworkService.Send(this, p);
                 }

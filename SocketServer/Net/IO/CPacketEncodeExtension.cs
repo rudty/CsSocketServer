@@ -71,7 +71,7 @@ namespace SocketServer.Net.IO {
         /// <typeparam name="T">모든 클래스</typeparam>
         /// <param name="o">모든 오브젝트</param>
         /// <returns></returns>
-        private static void PushInternal<T>(CPacket p, T o) {
+        private static void AddClass<T>(CPacket p, T o) {
             var structType = o.GetType();
             foreach (var f in structType.GetRuntimeFields()) {
                 var fieldType = f.FieldType;
@@ -96,15 +96,15 @@ namespace SocketServer.Net.IO {
                             if (fieldType.IsPrimitive) {
                                 throw new ArgumentException($"{fieldType} not support type");
                             }
-                            PushInternal(p, elem);
+                            AddClass(p, elem);
                             break;
                         }
                 }
             }
         }
 
-        public static CPacket Push<T>(CPacket p, T o) where T : class {
-            PushInternal(p, o);
+        public static CPacket Add<T>(this CPacket p, T o) where T : class {
+            AddClass(p, o);
             return p;
         }
     }

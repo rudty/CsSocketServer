@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using SocketServer.Net.IO;
+using System.Collections.Generic;
 
 namespace SocketServerTest {
     public class LocalTestClient: IDisposable{
@@ -21,14 +22,24 @@ namespace SocketServerTest {
             client.Client.Send(m.Span);
         }
 
-        public Memory<byte> ReceiveAny() {
-            byte[] b = new byte[1024];
-            int len = client.Client.Receive(b);
-            return b.AsMemory(3, len);
+        public CPacket ReceivePacket() {
+            var b = CPacketBufferManager.Obtain();
+            int len = client.Client.Receive(b.Span);
+            return new CPacket(b);
         }
 
         void IDisposable.Dispose() {
         }
+    }
+
+    class EventListener {
+        public string key;
+        public Server.OnUserMessageListener listener;
+        public EventListener(string key, Server.OnUserMessageListener listener) {
+            this.key = key;
+            this.listener = listener;
+        }
+
     }
 
     /// <summary>
@@ -38,15 +49,11 @@ namespace SocketServerTest {
     public class ServerWrapper: IDisposable {
         readonly Server server;
 
-        Server.OnUserMessageListener registerListener = null;
-        public Server.OnUserMessageListener UserMessageListener {
-            set {
-                registerListener = value;
-                server.UserMessageListener += value;
-            }
-            get {
-                return null;
-            }
+        List<EventListener> eventListeners = new List<EventListener>();
+        public ServerWrapper AddEventListener(string k, Server.OnUserMessageListener l) {
+            server.AddEventListener(k, l);
+            eventListeners.Add(new EventListener(k, l));
+            return this;
         }
 
         public ServerWrapper(Server s) {
@@ -54,9 +61,9 @@ namespace SocketServerTest {
         }
 
         void IDisposable.Dispose() {
-            if (registerListener != null) {
-                server.UserMessageListener -= registerListener;
-            }
+            foreach (var l in eventListeners) {
+                server.RemoveEventListener(l.key, l.listener);
+            }    
         }
     }
 
