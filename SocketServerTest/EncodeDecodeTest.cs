@@ -19,6 +19,7 @@ namespace SocketServerTest {
             CPacket p = new CPacket();
             p.Add(value1);
 
+            p.MoveToFirst();
             var o = p.NextInt();
             Assert.AreEqual(value1, o);
         }
@@ -30,6 +31,7 @@ namespace SocketServerTest {
             p.Add(value1);
             p.Add(value2);
 
+            p.MoveToFirst();
             var o = p.NextInt();
             Assert.AreEqual(value1, o);
 
@@ -42,6 +44,7 @@ namespace SocketServerTest {
             CPacket p = new CPacket();
             p.Add(str1);
 
+            p.MoveToFirst();
             var o = p.NextString();
             Assert.AreEqual(str1, o);
 
@@ -53,6 +56,7 @@ namespace SocketServerTest {
             p.Add(str1);
             p.Add(str2);
 
+            p.MoveToFirst();
             var o = p.NextString();
             Assert.AreEqual(str1, o);
 
@@ -68,6 +72,7 @@ namespace SocketServerTest {
                 .Add(value2)
                 .Add(str2);
 
+            p.MoveToFirst();
             int i_out = p.NextInt();
             Assert.AreEqual(value1, i_out);
 
@@ -95,6 +100,7 @@ namespace SocketServerTest {
 
             p.Add(t);
 
+            p.MoveToFirst();
             int i_out = p.NextInt();
             Assert.AreEqual(value1, i_out);
 
@@ -118,6 +124,7 @@ namespace SocketServerTest {
             var p = CPacket.New
                     .Add(o);
 
+            p.MoveToFirst();
             int i_out = p.NextInt();
             Assert.AreEqual(value1, i_out);
 
@@ -141,6 +148,7 @@ namespace SocketServerTest {
             var p = CPacket.New
                     .Add(o);
 
+            p.MoveToFirst();
             var o_out = p.Next<NestedTestObject>();
             Assert.AreEqual(o_out.x, value1);
             Assert.AreEqual(o_out.o.a, value2);

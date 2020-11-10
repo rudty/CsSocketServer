@@ -1,6 +1,8 @@
-﻿using SocketServer;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SocketServer;
+using SocketServer.Net;
 using SocketServer.Net.IO;
+using System.Threading.Tasks;
 
 namespace SocketServerTest {
 
@@ -13,6 +15,7 @@ namespace SocketServerTest {
             using var client = ServerTestHelper.TestClient;
             server.AddEventListener("hello", (Session session, CPacket p) => {
                 session.Send(CPacket.New.Add("hi"));
+                return Task.CompletedTask;
             });
             client.Send(
                 CPacket.New
@@ -22,11 +25,5 @@ namespace SocketServerTest {
             var body = res.NextString();
             Assert.IsTrue(body == "hi");
         }
-
-        [TestMethod]
-        public void TestLogin() {
-
-        }
-
     }
 }

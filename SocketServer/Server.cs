@@ -8,11 +8,11 @@ namespace SocketServer {
     public class Server: ISessionEventListener {
 
         public delegate bool OnSessionRegisterListener(Session session);
-        public delegate void OnUserMessageListener(Session session, CPacket packetInputStream);
+        public delegate Task OnUserMessageListener(Session session, CPacket packetInputStream);
 
         public event OnSessionRegisterListener SessionRegisterListener;
 
-        Dictionary<string, OnUserMessageListener> messageListeners = new Dictionary<string, OnUserMessageListener>(); 
+        readonly Dictionary<string, OnUserMessageListener> messageListeners = new Dictionary<string, OnUserMessageListener>(); 
 
         readonly NetworkService networkService = new NetworkService();
 
@@ -79,6 +79,19 @@ namespace SocketServer {
             }
         }
 
+        void ProcessUserMessage(Session session, CPacket p) {
+            string message = p.NextString();
+            bool exists;
+            OnUserMessageListener listener;
+            lock (messageListeners) {
+                exists = messageListeners.TryGetValue(message, out listener);
+            }
+
+            if (exists) {
+                listener(session, p);
+            }
+        }
+
         Task ISessionEventListener.OnPacketReceived(Session session, CPacket p) {
             int header = p.NextByte();
             switch (header) {
@@ -86,17 +99,12 @@ namespace SocketServer {
                     OnSessionRegister(session, p);
                     break;
                 case 1: {
-                        string message = p.NextString();
-                        bool exists;
-                        OnUserMessageListener listener;
-                        lock (messageListeners) {
-                            exists = messageListeners.TryGetValue(message, out listener);
-                        }
+                        if (allSession.ContainsKey(session.SessionID)) {
+                            ProcessUserMessage(session, p);
+                        } else {
+                            networkService.CloseClient(session);
 
-                        if (exists) {
-                            listener(session, p);
                         }
-
                         break;
                     }
             }

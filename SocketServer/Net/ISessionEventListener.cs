@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace SocketServer {
+namespace SocketServer.Net {
     public interface ISessionEventListener {
         Task OnPacketReceived(Session session, CPacket buffer);
 

@@ -50,7 +50,7 @@ namespace SocketServer.Net {
             }
         }
 
-        void CloseClient(Session session) {
+        public void CloseClient(Session session) {
             session.OnRemoved();
 
             try {

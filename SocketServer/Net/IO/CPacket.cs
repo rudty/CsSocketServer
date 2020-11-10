@@ -52,6 +52,10 @@ namespace SocketServer.Net.IO {
             return Buffer.Slice(0, Position);
         }
 
+        public void MoveToFirst() {
+            this.Position = HEADER_SIZE;
+        }
+
         void IDisposable.Dispose() {
             Recycle();
         }

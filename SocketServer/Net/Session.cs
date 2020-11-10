@@ -6,7 +6,7 @@ using SocketServer.Net;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
-namespace SocketServer {
+namespace SocketServer.Net {
 
     /// <summary>
     /// 접속 1 소켓 당 1개 생성하는 세션 관리 객체
@@ -24,8 +24,8 @@ namespace SocketServer {
 
         bool online = true;
 
-        MessageTaskRunner sessionTaskExecutor = new MessageTaskRunner();
-        MessageTaskRunner sendExecutor = new MessageTaskRunner();
+        readonly MessageTaskRunner sessionTaskExecutor = new MessageTaskRunner();
+        readonly MessageTaskRunner sendExecutor = new MessageTaskRunner();
 
         public ISessionEventListener OnSessionEventListener { private get; set; }
 
