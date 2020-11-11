@@ -7,6 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketServer", "SocketServe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketServerTest", "SocketServerTest\SocketServerTest.csproj", "{18AF8236-D437-4155-8351-01CDE037E118}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2AF02722-7DF0-49FB-9079-91B35304F562}"
+	ProjectSection(SolutionItems) = preProject
+		Hello.proto = Hello.proto
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SessionServer", "SessionServer\SessionServer.csproj", "{86FF01DC-99ED-43C3-B7D8-17FC71CF718C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +28,10 @@ Global
 		{18AF8236-D437-4155-8351-01CDE037E118}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18AF8236-D437-4155-8351-01CDE037E118}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18AF8236-D437-4155-8351-01CDE037E118}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86FF01DC-99ED-43C3-B7D8-17FC71CF718C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86FF01DC-99ED-43C3-B7D8-17FC71CF718C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86FF01DC-99ED-43C3-B7D8-17FC71CF718C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86FF01DC-99ED-43C3-B7D8-17FC71CF718C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

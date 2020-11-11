@@ -1,0 +1,7 @@
+syntax = "proto3";
+package Data;
+option csharp_namespace = "SessionServer";
+
+message Hello {
+	
+}
