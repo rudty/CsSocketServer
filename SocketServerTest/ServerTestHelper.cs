@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using SocketServer.Net.IO;
 using System.Collections.Generic;
+using SocketServer.Core;
 
 namespace SocketServerTest {
     public class LocalTestClient: IDisposable{
@@ -18,14 +19,15 @@ namespace SocketServerTest {
         }
 
         public void Send(CPacket p) {
-            var m = p.Packing();
+            var pack = p.Packing();
+            var m = pack.AsMemory();
             client.Client.Send(m.Span);
         }
 
         public CPacket ReceivePacket() {
             var b = CPacketBufferManager.Obtain();
             int len = client.Client.Receive(b.Span);
-            return new CPacket(b);
+            return new CPacket(new Slice<byte>(b.ToArray()));
         }
 
         void IDisposable.Dispose() {

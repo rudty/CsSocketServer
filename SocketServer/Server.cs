@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SocketServer.Net;
 using SocketServer.Net.IO;
 using System.Threading.Tasks;
+using SocketServer.Core;
 
 namespace SocketServer {
     public class Server: ISessionEventListener {

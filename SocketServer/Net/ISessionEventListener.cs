@@ -1,6 +1,7 @@
 ﻿using SocketServer.Net.IO;
 using System;
 using System.Threading.Tasks;
+using SocketServer.Core;
 
 namespace SocketServer.Net {
     public interface ISessionEventListener {

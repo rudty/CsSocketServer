@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Text;
+using SocketServer.Core;
 
 namespace SocketServer.Net.IO {
     /// <summary>
@@ -9,7 +10,7 @@ namespace SocketServer.Net.IO {
     public static class CPacketDecodeExtension {
 
         public static byte NextByte(this CPacket p) {
-            var s = p.Buffer.Span;
+            var s = p.Buffer;
             byte v = s[p.Position];
             p.Position += 1;
 
@@ -17,7 +18,7 @@ namespace SocketServer.Net.IO {
         }
 
         public static int NextInt(this CPacket p) {
-            var s = p.Buffer.Span;
+            var s = p.Buffer;
             int offset = p.Position;
 
             int v = s[offset];
@@ -31,14 +32,14 @@ namespace SocketServer.Net.IO {
         }
 
         public static string NextString(this CPacket p) {
-            var s = p.Buffer.Span;
+            var s = p.Buffer;
             int offset = p.Position;
 
             int len = s[offset];
             len += (s[offset + 1] << 8);
             offset += 2;
 
-            string r = Encoding.UTF8.GetString(s.Slice(offset, len));
+            string r = Encoding.UTF8.GetString(s.Buffer, offset, len);
             offset += len;
 
             p.Position = offset;

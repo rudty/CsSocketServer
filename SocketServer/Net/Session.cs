@@ -5,7 +5,7 @@ using SocketServer.Net.IO;
 using SocketServer.Net;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-
+using SocketServer.Core;
 namespace SocketServer.Net {
 
     /// <summary>

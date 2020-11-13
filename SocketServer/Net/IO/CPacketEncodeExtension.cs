@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using SocketServer.Core;
 
 namespace SocketServer.Net.IO {
 
@@ -12,7 +13,7 @@ namespace SocketServer.Net.IO {
     public static class CPacketEncodeExtension {
 
         public static CPacket Add(this CPacket p, int data) {
-            var b = p.Buffer.Span;
+            var b = p.Buffer;
             int o = p.Position;
             b[o] = (byte)(data);
             b[o + 1] = (byte)(data >> 8);
@@ -24,7 +25,7 @@ namespace SocketServer.Net.IO {
         }
 
         public static CPacket Add(this CPacket p, byte data) {
-            var b = p.Buffer.Span;
+            var b = p.Buffer;
             b[p.Position] = (data);
 
             p.Position += sizeof(byte);
@@ -37,21 +38,28 @@ namespace SocketServer.Net.IO {
         }
 
         public static CPacket Add(this CPacket p, Memory<byte> data) {
-            data.CopyTo(p.Buffer.Slice(p.Position));
+            data.CopyTo(p.Buffer[p.Position..]);
             return p;
         }
 
+        private static void ThrowIfOverFlow(CPacket p, int addSize) {
+            var b = p.Buffer;
+            if (addSize > b.Length - p.Position) {
+                throw new OverflowException($"packet overflow require:{addSize}, remain {b.Length - p.Position}");
+            }
+        }
+
         public static CPacket Add(this CPacket p, byte[] data, int offset, int size) {
-            var b = p.Buffer.Span;
-            data
-                .AsSpan(offset, size)
-                .CopyTo(b.Slice(p.Position));
+            ThrowIfOverFlow(p, size);
+
+            var b = p.Buffer;
+            Array.Copy(data, offset, b.Buffer, p.Position, size);
             p.Position += size;
             return p;
         }
 
         public static CPacket Add(this CPacket p, string s) {
-            var b = p.Buffer.Span;
+            var b = p.Buffer;
             var len = (Int16)s.Length;
             var o = p.Position;
             b[o + 0] = (byte)(len);
@@ -59,7 +67,9 @@ namespace SocketServer.Net.IO {
             p.Position += sizeof(Int16);
 
             byte[] byteString = Encoding.UTF8.GetBytes(s);
-            byteString.CopyTo(b.Slice(p.Position));
+            ThrowIfOverFlow(p, byteString.Length);
+
+            Array.Copy(byteString, 0, b.Buffer, p.Position, byteString.Length);
             p.Position += byteString.Length;
             return p;
         }

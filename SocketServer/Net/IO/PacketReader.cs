@@ -6,7 +6,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.IO;
-
+using SocketServer.Core;
 namespace SocketServer.Net.IO {
 
     /// <summary>
@@ -102,7 +102,7 @@ namespace SocketServer.Net.IO {
                     return null;
                 }
 
-                return new CPacket(buf);
+                return new CPacket(new Slice<byte>(buf.ToArray()));
             } catch (Exception e) {
                 CPacketBufferManager.Recycle(buf);
                 throw e;

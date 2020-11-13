@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using SocketServer.Net.IO;
+using SocketServer.Core;
 namespace SocketServer.Net {
 
     /// <summary>
@@ -30,7 +31,7 @@ namespace SocketServer.Net {
                     var p = await packetReader.ReceiveAsync();
                     if (p == null) {
                         break;
-                    }
+                    } 
                     session.OnPacketReceive(p);
                 }
             } catch (Exception e) {
@@ -40,7 +41,8 @@ namespace SocketServer.Net {
         }
 
         internal async void Send(Session session, CPacket p) {
-            var m = p.Packing();
+            var pack = p.Packing();
+            var m = pack.AsMemory();
             while (true) {
                 int len = await session.Socket.SendAsync(m, SocketFlags.None);
                 if (len == m.Length) {

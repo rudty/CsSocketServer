@@ -3,7 +3,7 @@ using SocketServer;
 using SocketServer.Net;
 using SocketServer.Net.IO;
 using System.Threading.Tasks;
-
+using SocketServer.Core;
 namespace SocketServerTest {
 
     [TestClass]

@@ -11,15 +11,15 @@ namespace SocketServerTest {
         [TestMethod]
         public void TestNew() {
             byte[] b = new byte[1024];
-            new Slice(b, 0, 1024);
-            new Slice(b, 3, 1021);
-            new Slice(b, 1023, 1);
+            new Slice<byte>(b, 0, 1024);
+            new Slice<byte>(b, 3, 1021);
+            new Slice<byte>(b, 1023, 1);
         }
 
         [TestMethod]
         public void Indexer() {
             byte[] b = new byte[10];
-            Slice s = new Slice(b, 0, 1);
+            Slice<byte> s = new Slice<byte>(b, 0, 1);
             Console.WriteLine(s[0]);
             s[0] = 3;
 
@@ -35,7 +35,7 @@ namespace SocketServerTest {
         [TestMethod]
         public void Range() {
             byte[] b = new byte[1024];
-            var s = new Slice(b, 0, 1024);
+            var s = new Slice<byte>(b, 0, 1024);
             var s2 = s[0..2];
             var s3 = s[0..1024];
             var s4 = s[..^256];
