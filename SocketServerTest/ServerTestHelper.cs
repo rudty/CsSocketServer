@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using SocketServer.Net.IO;
 using System.Collections.Generic;
 using SocketServer.Core;
 
@@ -13,21 +12,20 @@ namespace SocketServerTest {
         readonly TcpClient client = new TcpClient();
         public LocalTestClient(int port) {
             client.NoDelay = true;
-            client.ReceiveTimeout = 2000;
-            client.SendTimeout = 2000;
+            client.ReceiveTimeout = 200000;
+            client.SendTimeout = 200000;
             client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
         }
 
         public void Send(CPacket p) {
             var pack = p.Packing();
-            var m = pack.AsMemory();
-            client.Client.Send(m.Span);
+            client.Client.Send(pack.Buffer, pack.Offset, pack.Length, SocketFlags.None);
         }
 
         public CPacket ReceivePacket() {
-            var b = CPacketBufferManager.Obtain();
-            int len = client.Client.Receive(b.Span);
-            return new CPacket(new Slice<byte>(b.ToArray()));
+            var b = SliceMemoryPool.Obtain();
+            int len = client.Client.Receive(b.Buffer, b.Offset, b.Length, SocketFlags.None);
+            return new CPacket(b);
         }
 
         void IDisposable.Dispose() {

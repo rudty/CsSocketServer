@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Text;
 using SocketServer.Core;
@@ -31,48 +32,32 @@ namespace SocketServer.Net.IO {
             return v;
         }
 
+        public static short NextShort(this CPacket p) {
+            var s = p.Buffer;
+            int offset = p.Position;
+            short value = s[offset];
+            value += (short)(s[offset + 1] << 8);
+            p.Position += 2;
+            return value;
+        }
+
         public static string NextString(this CPacket p) {
+            int len = p.NextShort();
+
             var s = p.Buffer;
             int offset = p.Position;
 
-            int len = s[offset];
-            len += (s[offset + 1] << 8);
-            offset += 2;
-
-            string r = Encoding.UTF8.GetString(s.Buffer, offset, len);
+            string r = Encoding.UTF8.GetString(s.Buffer, s.Offset + offset, len);
             offset += len;
 
             p.Position = offset;
             return r;
         }
 
-        private static object NextInternal(CPacket p, Type structType) {
-            var o = Activator.CreateInstance(structType);
-            foreach (var f in structType.GetRuntimeFields()) {
-                var fieldType = f.FieldType;
-                var elem = f.GetValue(o);
-
-                if (fieldType == typeof(int)) {
-                    f.SetValue(o, p.NextInt());
-                } else if (fieldType == typeof(byte)) {
-                    f.SetValue(o, p.NextByte());
-                } else if (fieldType == typeof(string)) {
-                    f.SetValue(o, p.NextString());
-                } else {
-                    if (fieldType.BaseType != typeof(object)) {
-                        throw new ArgumentException($"{fieldType} not support type");
-                    }
-                    if (fieldType.IsPrimitive) {
-                        throw new ArgumentException($"{fieldType} not support type");
-                    }
-                    f.SetValue(o, NextInternal(p, fieldType));
-                }
-            }
-            return o;
+        public static T Next<T>(this CPacket p, Google.Protobuf.MessageParser<T> parser) where T: Google.Protobuf.IMessage<T> {
+            int len = p.NextShort();
+            var s = p.Buffer;
+            return parser.ParseFrom(s.Buffer, s.Offset + p.Position, len);
         }
-
-        public static T Next<T>(this CPacket p) where T : class {
-            return (T)NextInternal(p, typeof(T));
-        }
-    }
+     }
 }

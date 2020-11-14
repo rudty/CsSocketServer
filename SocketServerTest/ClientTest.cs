@@ -4,6 +4,8 @@ using SocketServer.Net;
 using SocketServer.Net.IO;
 using System.Threading.Tasks;
 using SocketServer.Core;
+using SessionServer;
+
 namespace SocketServerTest {
 
     [TestClass]
@@ -24,6 +26,28 @@ namespace SocketServerTest {
             var res = client.ReceivePacket();
             var body = res.NextString();
             Assert.IsTrue(body == "hi");
+        }
+
+        [TestMethod]
+        public void TestHello() {
+            using var server = ServerTestHelper.TestServer;
+            using var client = ServerTestHelper.TestClient;
+            server.AddEventListener("hello", (Session session, CPacket p) => {
+                Hello h = p.Next(Hello.Parser);
+                h.Value += 1;
+                session.Send(CPacket.New.Add(h));
+                return Task.CompletedTask;
+            });
+            Hello h = new Hello();
+            h.Value = 1;
+            client.Send(
+                CPacket.New
+                    .Add((byte)1)
+                    .Add("hello")
+                    .Add(h)); ;
+            var res = client.ReceivePacket();
+            var h2 = res.Next(Hello.Parser);
+            System.Console.WriteLine(h2.Value);
         }
     }
 }

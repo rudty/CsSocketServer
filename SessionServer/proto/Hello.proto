@@ -3,5 +3,5 @@ package Data;
 option csharp_namespace = "SessionServer";
 
 message Hello {
-	
+	int32 value = 1;	
 }

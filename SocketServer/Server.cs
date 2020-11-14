@@ -95,20 +95,23 @@ namespace SocketServer {
 
         Task ISessionEventListener.OnPacketReceived(Session session, CPacket p) {
             int header = p.NextByte();
-            switch (header) {
-                case 0:
-                    OnSessionRegister(session, p);
-                    break;
-                case 1: {
-                        if (allSession.ContainsKey(session.SessionID)) {
-                            ProcessUserMessage(session, p);
-                        } else {
-                            networkService.CloseClient(session);
-
-                        }
-                        break;
-                    }
+            if (header == 1) {
+                ProcessUserMessage(session, p);
             }
+            //switch (header) {
+            //    case 0:
+            //        OnSessionRegister(session, p);
+            //        break;
+            //    case 1: {
+            //            if (allSession.ContainsKey(session.SessionID)) {
+            //                ProcessUserMessage(session, p);
+            //            } else {
+            //                networkService.CloseClient(session);
+
+            //            }
+            //            break;
+            //        }
+            //}
             return Task.CompletedTask;
         }
 

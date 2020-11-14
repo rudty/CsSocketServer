@@ -32,7 +32,7 @@ namespace SocketServer.Net.IO {
         /// </summary>
         /// <param name="buffer">첫 읽은 4바이트 이상의 버퍼</param>
         /// <returns>메세지의 길이</returns>
-        int DecodeHeader(Span<byte> buffer) {
+        int DecodeHeader(Slice<byte> buffer) {
             const int maxPacketSize = CPacket.MESSAGE_BUFFER_SIZE - CPacket.HEADER_SIZE;
 
             if (buffer[0] != CPacket.PACKET_BEGIN) {
@@ -86,7 +86,7 @@ namespace SocketServer.Net.IO {
         /// </summary>
         /// <returns>읽은 완전한 패킷</returns>
         public async Task<CPacket> ReceiveAsync() {
-            var buf = CPacketBufferManager.Obtain();
+            var buf = SliceMemoryPool.Obtain();
             try {
                 if (false == await ReceiveNext(buf, 0, CPacket.HEADER_SIZE)) {
                     return null;
@@ -94,7 +94,7 @@ namespace SocketServer.Net.IO {
 
                 // 처음 HEADER를 받을떄 최대 header 까지만 받게
                 // 총 읽을 길이 (메세지 길이 + 헤더 길이)
-                int messageSize = DecodeHeader(buf.Span);
+                int messageSize = DecodeHeader(buf);
                 messageSize += CPacket.HEADER_SIZE;
 
 
@@ -102,9 +102,9 @@ namespace SocketServer.Net.IO {
                     return null;
                 }
 
-                return new CPacket(new Slice<byte>(buf.ToArray()));
+                return new CPacket(buf);
             } catch (Exception e) {
-                CPacketBufferManager.Recycle(buf);
+                SliceMemoryPool.Recycle(buf);
                 throw e;
             }
         }

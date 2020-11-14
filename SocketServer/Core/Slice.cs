@@ -13,6 +13,12 @@ namespace SocketServer.Core {
         public int Offset { get; private set; }
         public int Length { get; private set; }
 
+        public Span<T> Span {
+            get {
+                return Buffer.AsSpan(Offset, Length);
+            }
+        }
+
         public bool IsEmpty {
             get {
                 return Buffer != null;
@@ -81,7 +87,7 @@ namespace SocketServer.Core {
 
         public Slice<T> this[Range range] {
             get {
-                return new Slice<T>(this, range.Start.Value, range.End.Value);
+                return new Slice<T>(this, Offset + range.Start.Value, range.End.Value);
             }
         }
 
