@@ -13,12 +13,6 @@ namespace SocketServer.Core {
         public int Offset { get; private set; }
         public int Length { get; private set; }
 
-        public Span<T> Span {
-            get {
-                return Buffer.AsSpan(Offset, Length);
-            }
-        }
-
         public bool IsEmpty {
             get {
                 return Buffer != null;
@@ -95,8 +89,11 @@ namespace SocketServer.Core {
             return Buffer.AsMemory(Offset, Length);
         }
 
-        public static implicit operator Memory<T>(Slice<T> slice) {
-            return slice.AsMemory();
+        public Memory<T> AsMemory(int start, int count) {
+            if (count > Length) {
+                throw new ArgumentException($"AsMemory() count > slice.length count:{count}, slice.length:{Length}");
+            }
+            return Buffer.AsMemory(Offset + start, Length);
         }
     }
 }

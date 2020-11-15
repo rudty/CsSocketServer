@@ -26,29 +26,24 @@ namespace SocketServer.Net {
             var clientSocket = session.Socket;
             using var networkStream = new NetworkStream(clientSocket);
             var packetReader = new PacketReader(networkStream);
-            try {
-                while (true) {
-                    var p = await packetReader.ReceiveAsync();
-                    if (p == null) {
-                        break;
-                    } 
-                    session.OnPacketReceive(p);
-                }
-            } catch (Exception e) {
-                Console.WriteLine(e);
+            while (true) {
+                var p = await packetReader.ReceiveAsync();
+                if (p == null) {
+                    break;
+                } 
+                session.OnPacketReceive(p);
             }
             CloseClient(session);
         }
 
         internal async void Send(Session session, CPacket p) {
             var pack = p.Packing();
-            var m = pack.AsMemory();
             while (true) {
-                int len = await session.Socket.SendAsync(m, SocketFlags.None);
-                if (len == m.Length) {
+                int len = await session.Socket.SendAsync(pack, SocketFlags.None);
+                if (len == pack.Length) {
                     break;
                 }
-                m = m.Slice(0, len);
+                pack = pack.Slice(0, len);
             }
         }
 

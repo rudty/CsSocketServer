@@ -8,7 +8,7 @@ using SocketServer.Net;
 using SocketServer.Net.IO;
 namespace SessionServer {
     class Program {
-        static Task OnUserMessageListener(Session session, CPacket packet) {
+        static Task OnUserMessageListener(Session session, string message, CPacket packet) {
             Hello h = packet.Next(Hello.Parser);
             h.Value += 1;
             return Task.CompletedTask;

@@ -49,7 +49,7 @@ namespace SocketServer.Net.IO {
         }
 
         public static CPacket Add(this CPacket p, Memory<byte> data) {
-            data.CopyTo(p.Buffer[p.Position..]);
+            data.CopyTo(p.Buffer.AsMemory());
             return p;
         }
 
@@ -74,7 +74,6 @@ namespace SocketServer.Net.IO {
             p.Add(len);
 
             var b = p.Buffer;
-            var o = p.Position;
 
             byte[] byteString = Encoding.UTF8.GetBytes(s);
             ThrowIfOverFlow(p, byteString.Length);
@@ -85,11 +84,12 @@ namespace SocketServer.Net.IO {
         }
 
         public static CPacket Add(this CPacket p, IMessage m) {
-            int size = m.CalculateSize();
-            p.Add((Int16)size);
-            var span = p.Buffer.Span.Slice(p.Position, size);
+            var len = (Int16)m.CalculateSize();
+            p.Add(len);
+            var s = p.Buffer;
+            var span = s.Buffer.AsSpan(s.Offset + p.Position, len);
             m.WriteTo(span);
-            p.Position += size;
+            p.Position += len;
             return p;
         }
 

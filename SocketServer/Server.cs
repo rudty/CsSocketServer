@@ -4,16 +4,15 @@ using SocketServer.Net;
 using SocketServer.Net.IO;
 using System.Threading.Tasks;
 using SocketServer.Core;
+using System.Runtime.InteropServices;
 
 namespace SocketServer {
     public class Server: ISessionEventListener {
 
         public delegate bool OnSessionRegisterListener(Session session);
-        public delegate Task OnUserMessageListener(Session session, CPacket packetInputStream);
+        public delegate Task ClientMessageListener(Session session, string message, CPacket packetInputStream);
 
-        public event OnSessionRegisterListener SessionRegisterListener;
-
-        readonly Dictionary<string, OnUserMessageListener> messageListeners = new Dictionary<string, OnUserMessageListener>(); 
+        readonly Dictionary<string, ClientMessageListener> messageListeners = new Dictionary<string, ClientMessageListener>(); 
 
         readonly NetworkService networkService = new NetworkService();
 
@@ -40,7 +39,7 @@ namespace SocketServer {
         }
 
         ///
-        public void AddEventListener(string k, OnUserMessageListener l) {
+        public void AddEventListener(string k, ClientMessageListener l) {
             if (l != null) {
                 lock (messageListeners) {
                     //TODO 클래스에 담는다던가 해서 두번 검색하는거 최적화 필요
@@ -53,7 +52,7 @@ namespace SocketServer {
             }
         }
 
-        public void RemoveEventListener(string k, OnUserMessageListener l) {
+        public void RemoveEventListener(string k, ClientMessageListener l) {
             lock (messageListeners) {
                 if (messageListeners.ContainsKey(k)) {
                     messageListeners[k] -= l;
@@ -72,47 +71,22 @@ namespace SocketServer {
             return Task.CompletedTask;
         }
 
-        void OnSessionRegister(Session session, CPacket p) {
-            if (SessionRegisterListener(session)) {
-                lock (allSession) {
-                    allSession.Add(session.SessionID, session);
-                }
-            }
-        }
-
-        void ProcessUserMessage(Session session, CPacket p) {
+        async Task ProcessUserMessage(Session session, CPacket p) {
             string message = p.NextString();
             bool exists;
-            OnUserMessageListener listener;
+            ClientMessageListener listener;
             lock (messageListeners) {
                 exists = messageListeners.TryGetValue(message, out listener);
             }
 
             if (exists) {
-                listener(session, p);
+                await listener(session, message, p);
             }
         }
 
         Task ISessionEventListener.OnPacketReceived(Session session, CPacket p) {
-            int header = p.NextByte();
-            if (header == 1) {
-                ProcessUserMessage(session, p);
-            }
-            //switch (header) {
-            //    case 0:
-            //        OnSessionRegister(session, p);
-            //        break;
-            //    case 1: {
-            //            if (allSession.ContainsKey(session.SessionID)) {
-            //                ProcessUserMessage(session, p);
-            //            } else {
-            //                networkService.CloseClient(session);
-
-            //            }
-            //            break;
-            //        }
-            //}
-            return Task.CompletedTask;
+            var t = ProcessUserMessage(session, p);
+            return t;
         }
 
         Task ISessionEventListener.OnPacketDecodeFail(Session session, Exception ex, Memory<byte> buffer) {

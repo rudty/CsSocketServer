@@ -19,7 +19,7 @@ namespace SocketServerTest {
 
         public void Send(CPacket p) {
             var pack = p.Packing();
-            client.Client.Send(pack.Buffer, pack.Offset, pack.Length, SocketFlags.None);
+            client.Client.Send(pack.Span, SocketFlags.None);
         }
 
         public CPacket ReceivePacket() {
@@ -34,8 +34,8 @@ namespace SocketServerTest {
 
     class EventListener {
         public string key;
-        public Server.OnUserMessageListener listener;
-        public EventListener(string key, Server.OnUserMessageListener listener) {
+        public Server.ClientMessageListener listener;
+        public EventListener(string key, Server.ClientMessageListener listener) {
             this.key = key;
             this.listener = listener;
         }
@@ -50,7 +50,7 @@ namespace SocketServerTest {
         readonly Server server;
 
         List<EventListener> eventListeners = new List<EventListener>();
-        public ServerWrapper AddEventListener(string k, Server.OnUserMessageListener l) {
+        public ServerWrapper AddEventListener(string k, Server.ClientMessageListener l) {
             server.AddEventListener(k, l);
             eventListeners.Add(new EventListener(k, l));
             return this;

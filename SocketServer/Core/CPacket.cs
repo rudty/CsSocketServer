@@ -41,15 +41,15 @@ namespace SocketServer.Core {
             }
         }
 
-        public Slice<byte> Packing() {
-            var b = Buffer;
+        public Memory<byte> Packing() {
+            Slice<byte> b = Buffer;
             var dataLength = Position - HEADER_SIZE;
 
             b[0] = PACKET_BEGIN;
             b[1] = (byte)(dataLength);
             b[2] = (byte)(dataLength >> 8);
 
-            return Buffer[0..Position];
+            return Buffer.AsMemory(0, Position);
         }
 
         public void MoveToFirst() {

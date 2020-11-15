@@ -63,11 +63,9 @@ namespace SocketServer.Net.IO {
         /// <param name="position">읽기를 시작할 위치</param>
         /// <param name="length">길이</param>
         /// <returns>정상적으로 읽기를 완료하였음</returns>
-        async ValueTask<bool> ReceiveNext(Memory<byte> buf, int position, int length) {
+        async ValueTask<bool> ReceiveNext(Slice<byte> buf, int position, int length) {
             while (position < length) {
-                var b = buf[position..length];
-
-                int len = await stream.ReadAsync(b);
+                int len = await stream.ReadAsync(buf.Buffer, buf.Offset + position, length);
                 if (len <= 0) {
                     // 클라이언트에서 연결을 끊었을때
                     return false;
@@ -77,7 +75,25 @@ namespace SocketServer.Net.IO {
             }
 
             return true;
-        } 
+        }
+
+        public async Task<bool> ReceiveAsync(Slice<byte> buf) {
+            if (false == await ReceiveNext(buf, 0, CPacket.HEADER_SIZE)) {
+                return false;
+            }
+
+            // 처음 HEADER를 받을떄 최대 header 까지만 받게
+            // 총 읽을 길이 (메세지 길이 + 헤더 길이)
+            int messageSize = DecodeHeader(buf);
+            messageSize += CPacket.HEADER_SIZE;
+
+
+            if (false == await ReceiveNext(buf, CPacket.HEADER_SIZE, messageSize)) {
+                return false;
+            }
+
+            return true;
+        }
 
         /// <summary>
         /// 클라이언트로부터 패킷을 읽습니다
@@ -86,27 +102,20 @@ namespace SocketServer.Net.IO {
         /// </summary>
         /// <returns>읽은 완전한 패킷</returns>
         public async Task<CPacket> ReceiveAsync() {
-            var buf = SliceMemoryPool.Obtain();
+            Slice<byte> buf = SliceMemoryPool.Obtain();
+
             try {
-                if (false == await ReceiveNext(buf, 0, CPacket.HEADER_SIZE)) {
-                    return null;
+                if (await ReceiveAsync(buf)) {
+                    // ok
+                    return new CPacket(buf);
                 }
-
-                // 처음 HEADER를 받을떄 최대 header 까지만 받게
-                // 총 읽을 길이 (메세지 길이 + 헤더 길이)
-                int messageSize = DecodeHeader(buf);
-                messageSize += CPacket.HEADER_SIZE;
-
-
-                if (false == await ReceiveNext(buf, CPacket.HEADER_SIZE, messageSize)) {
-                    return null;
-                }
-
-                return new CPacket(buf);
             } catch (Exception e) {
-                SliceMemoryPool.Recycle(buf);
-                throw e;
+                Console.WriteLine(e);
             }
+
+            // fail
+            SliceMemoryPool.Recycle(buf);
+            return null;
         }
     }
 }
