@@ -23,7 +23,6 @@ namespace SocketServerTest {
             });
             client.Send(
                 CPacket.New
-                    .Add((byte)1)
                     .Add("hello"));
             var res = client.ReceivePacket();
             var body = res.NextString();
@@ -45,7 +44,6 @@ namespace SocketServerTest {
             h.Value = 1;
             client.Send(
                 CPacket.New
-                    .Add((byte)1)
                     .Add("hello")
                     .Add(h));
             var res = client.ReceivePacket();

@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Sockets;
-using SocketServer.Net.IO;
-using SocketServer.Net;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using SocketServer.Core;
+using SocketServer.Collection;
+
 namespace SocketServer.Net {
 
     /// <summary>
@@ -24,8 +21,12 @@ namespace SocketServer.Net {
 
         bool online = true;
 
-        readonly MessageTaskRunner sessionTaskExecutor = new MessageTaskRunner();
-        readonly MessageTaskRunner sendExecutor = new MessageTaskRunner();
+        readonly SingleTaskRunner sessionTaskExecutor = new SingleTaskRunner();
+
+        /// <summary>
+        /// 패킷 순차적으로 보냄
+        /// </summary>
+        readonly SingleTaskRunner sendExecutor = new SingleTaskRunner();
 
         public ISessionEventListener OnSessionEventListener { private get; set; }
 

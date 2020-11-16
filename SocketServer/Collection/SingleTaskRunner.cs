@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SocketServer {
+namespace SocketServer.Collection {
 
-    public class MessageTaskRunner {
+    public class SingleTaskRunner {
         int work = 0;
         readonly BlockingCollection<Func<Task>> actions = new BlockingCollection<Func<Task>>();
         Task runTask = null;

@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using SocketServer.Net;
 using SocketServer.Net.IO;
 using System.Threading.Tasks;
 using SocketServer.Core;
-using System.Runtime.InteropServices;
 
-namespace SocketServer {
+namespace SocketServer.Net {
     public class Server: ISessionEventListener {
 
-        public delegate bool OnSessionRegisterListener(Session session);
-        public delegate Task ClientMessageListener(Session session, string message, CPacket packetInputStream);
+        public delegate Task ClientMessageListener(Request request);
 
         readonly Dictionary<string, ClientMessageListener> messageListeners = new Dictionary<string, ClientMessageListener>(); 
 
@@ -42,7 +39,6 @@ namespace SocketServer {
         public void AddEventListener(string k, ClientMessageListener l) {
             if (l != null) {
                 lock (messageListeners) {
-                    //TODO 클래스에 담는다던가 해서 두번 검색하는거 최적화 필요
                     if (messageListeners.ContainsKey(k)) {
                         messageListeners[k] += l;
                     } else {
@@ -71,8 +67,8 @@ namespace SocketServer {
             return Task.CompletedTask;
         }
 
-        async Task ProcessUserMessage(Session session, CPacket p) {
-            string message = p.NextString();
+        async Task ProcessUserMessage(Session session, CPacket requestPacket) {
+            string message = requestPacket.NextString();
             bool exists;
             ClientMessageListener listener;
             lock (messageListeners) {
@@ -80,7 +76,7 @@ namespace SocketServer {
             }
 
             if (exists) {
-                await listener(session, message, p);
+                await listener(new Request(message, requestPacket, session));
             }
         }
 

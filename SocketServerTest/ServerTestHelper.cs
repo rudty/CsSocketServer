@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using SocketServer.Core;
+using Google.Protobuf;
 
 namespace SocketServerTest {
     public class LocalTestClient: IDisposable{
