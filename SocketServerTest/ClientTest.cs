@@ -17,8 +17,8 @@ namespace SocketServerTest {
         public void TestEcho() {
             using var server = ServerTestHelper.TestServer;
             using var client = ServerTestHelper.TestClient;
-            server.AddEventListener("hello", (Session session, string message, CPacket p) => {
-                session.Send(CPacket.New.Add("hi"));
+            server.AddEventListener("hello", (Request req) => {
+                req.Session.Send(CPacket.New.Add("hi"));
                 return Task.CompletedTask;
             });
             client.Send(
@@ -34,10 +34,10 @@ namespace SocketServerTest {
         public void TestHello() {
             using var server = ServerTestHelper.TestServer;
             using var client = ServerTestHelper.TestClient;
-            server.AddEventListener("hello", (Session session, string message, CPacket p) => {
-                Hello h = p.Next(Hello.Parser);
+            server.AddEventListener("hello", (Request req) => {
+                Hello h = req.Packet.Next(Hello.Parser);
                 h.Value += 1;
-                session.Send(CPacket.New.Add(h));
+                req.Session.Send(CPacket.New.Add(h));
                 return Task.CompletedTask;
             });
             Hello h = new Hello();

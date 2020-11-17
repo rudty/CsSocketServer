@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using SocketServer.Net.IO;
 using System.Threading.Tasks;
 using SocketServer.Core;
+using SocketServer.Net;
 
-namespace SocketServer.Net {
+namespace SocketServer {
     public class Server: ISessionEventListener {
 
         public delegate Task ClientMessageListener(Request request);

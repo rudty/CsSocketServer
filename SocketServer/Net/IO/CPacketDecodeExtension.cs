@@ -43,10 +43,10 @@ namespace SocketServer.Net.IO {
 
         public static string NextString(this CPacket p) {
             int len = p.NextShort();
-
+            len = Math.Min(len, p.Buffer.Length - p.Position);
             var s = p.Buffer;
+  
             int offset = p.Position;
-
             string r = Encoding.UTF8.GetString(s.Buffer, s.Offset + offset, len);
             offset += len;
 
