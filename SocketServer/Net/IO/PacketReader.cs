@@ -36,7 +36,7 @@ namespace SocketServer.Net.IO {
             const int maxPacketSize = CPacket.MESSAGE_BUFFER_SIZE - CPacket.HEADER_SIZE;
 
             if (buffer[0] != CPacket.PACKET_BEGIN) {
-                throw new Exception($"packet header[0] error {buffer[0]}");
+                throw new PacketDecodeFailException(buffer, $"packet header[0] error {buffer[0]}");
             }
 
             int len = 0;
@@ -44,11 +44,11 @@ namespace SocketServer.Net.IO {
             len += buffer[2] << 8;
 
             if (len <= 0) {
-                throw new Exception($"packet length error {len}");
+                throw new PacketDecodeFailException(buffer, $"packet length error {len}");
             }
 
             if (len > maxPacketSize) {
-                throw new Exception($"message size({ len }) > messageBuffer size({ maxPacketSize })");
+                throw new PacketDecodeFailException(buffer, $"message size({ len }) > messageBuffer size({ maxPacketSize })");
             }
 
             return len;
@@ -104,13 +104,9 @@ namespace SocketServer.Net.IO {
         public async Task<CPacket> ReceiveAsync() {
             Slice<byte> buf = SliceMemoryPool.Obtain();
 
-            try {
-                if (await ReceiveAsync(buf)) {
-                    // ok
-                    return new CPacket(buf);
-                }
-            } catch (Exception e) {
-                Console.WriteLine(e);
+            if (await ReceiveAsync(buf)) {
+                // ok
+                return new CPacket(buf);
             }
 
             // fail

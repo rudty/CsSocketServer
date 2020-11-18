@@ -10,7 +10,7 @@ namespace SocketServer.Net {
     /// 
     /// </summary>
     public class Session {
-        
+
         internal Socket Socket { get; private set; }
 
         internal NetworkService NetworkService { get; private set; }
@@ -28,35 +28,26 @@ namespace SocketServer.Net {
         /// </summary>
         readonly SingleTaskRunner sendExecutor = new SingleTaskRunner();
 
-        public ISessionEventListener OnSessionEventListener { private get; set; }
+        private readonly ISessionEventListener sessionEventListener;
 
-        public Session(Socket socket, NetworkService networkService) {
+        public Session(Socket socket, NetworkService networkService, ISessionEventListener sessionEventListener) {
             SessionID = Guid.NewGuid().ToString();
             this.Socket = socket;
             this.NetworkService = networkService;
-        }
- 
-        public void OnPacketReceive(CPacket message) {
-            var c = OnSessionEventListener;
-            if (c != null) {
-                sessionTaskExecutor.Add(() => c.OnPacketReceived(this, message));
-            }
+            this.sessionEventListener = sessionEventListener;
         }
 
-        public void OnMessageDecodeFail(Exception ex, Memory<byte> buffer) {
-            var c = OnSessionEventListener;
-            if (c != null) {
-                sessionTaskExecutor.Add(() => c.OnPacketDecodeFail(this, ex, buffer));
-            }
+        public void OnPacketReceive(CPacket message) {
+            sessionTaskExecutor.Add(() => sessionEventListener.OnPacketReceived(this, message));
+        }
+
+        public void OnPacketDecodeFail(Exception ex, Slice<byte> buffer) {
+            sessionTaskExecutor.Add(() => sessionEventListener.OnPacketDecodeFail(this, ex, buffer));
         }
 
         public void OnRemoved() {
             online = false;
-
-            var c = OnSessionEventListener;
-            if (c != null) {
-                sessionTaskExecutor.Add(() => c.OnDisconnected(this));
-            }
+            sessionTaskExecutor.Add(() => sessionEventListener.OnDisconnected(this));
         }
 
         public void Send(CPacket p) {

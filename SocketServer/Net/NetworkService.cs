@@ -9,29 +9,41 @@ namespace SocketServer.Net {
     /// Receive/Send 클래스
     /// </summary>
     public class NetworkService {
-        public delegate void SessionHandler(Session session);
-        public event SessionHandler OnSessionCreated;
+        private ISessionEventListener sessionEventListener;
+
+        public NetworkService(ISessionEventListener sessionEventListener) {
+            if (sessionEventListener == null) {
+                throw new NullReferenceException("sessionEventListener must impl");
+            }
+            this.sessionEventListener = sessionEventListener;
+        }
 
         void OnNewClient(Socket client) {
-            Session session = new Session(client, this);
-            OnSessionCreated(session);
-            Task.Run(() => DoReceive(session));
+            Session session = new Session(client, this, sessionEventListener); 
+            Task.Run(async () => {
+                await sessionEventListener.OnCreate(session);
+                await DoReceive(session);
+            });
         }
 
         /// <summary>
         /// 접속이 시작되면 클라이언트로부터 입력을 받음
         /// </summary>
         /// <param name="session">계속 입력을 받을 세션</param>
-        async void DoReceive(Session session) {
+        async Task DoReceive(Session session) {
             var clientSocket = session.Socket;
             using var networkStream = new NetworkStream(clientSocket);
             var packetReader = new PacketReader(networkStream);
             while (true) {
-                var p = await packetReader.ReceiveAsync();
-                if (p == null) {
-                    break;
-                } 
-                session.OnPacketReceive(p);
+                try {
+                    var p = await packetReader.ReceiveAsync();
+                    if (p == null) {
+                        break;
+                    }
+                    session.OnPacketReceive(p);
+                } catch(PacketDecodeFailException e) {
+                    await sessionEventListener.OnPacketDecodeFail(session, e, e.Buffer);
+                }
             }
             CloseClient(session);
         }

@@ -53,6 +53,12 @@ namespace SocketServer.Net.IO {
             return p;
         }
 
+        public static CPacket Add(this CPacket p, Slice<byte> data) {
+            var b = p.Buffer;
+            Array.Copy(data.Buffer, data.Offset, b.Buffer, b.Offset + p.Position, data.Length);
+            return p;
+        }
+
         private static void ThrowIfOverFlow(CPacket p, int addSize) {
             var b = p.Buffer;
             if (addSize > b.Length - p.Position) {

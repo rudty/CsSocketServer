@@ -5,9 +5,10 @@ using SocketServer.Core;
 
 namespace SocketServer.Net {
     public interface ISessionEventListener {
+        Task OnCreate(Session session);
         Task OnPacketReceived(Session session, CPacket buffer);
 
-        Task OnPacketDecodeFail(Session session, Exception ex, Memory<byte> buffer);
+        Task OnPacketDecodeFail(Session session, Exception ex, Slice<byte> buffer);
 
         Task OnDisconnected(Session session);
         Task OnSendCompleted(Session session);

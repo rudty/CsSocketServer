@@ -10,9 +10,9 @@ namespace SocketServer {
 
         public delegate Task ClientMessageListener(Request request);
 
-        readonly Dictionary<string, ClientMessageListener> messageListeners = new Dictionary<string, ClientMessageListener>(); 
+        readonly Dictionary<string, ClientMessageListener> messageListeners = new Dictionary<string, ClientMessageListener>();
 
-        readonly NetworkService networkService = new NetworkService();
+        readonly NetworkService networkService;
 
         /// <summary>
         /// 전체 유저 session
@@ -20,7 +20,7 @@ namespace SocketServer {
         readonly Dictionary<string, Session> allSession = new Dictionary<string, Session>();
 
         public Server() {
-            networkService.OnSessionCreated += OnNewClient; 
+            networkService = new NetworkService(this);
         }
 
         /// <summary>
@@ -30,10 +30,6 @@ namespace SocketServer {
         /// <param name="port">오픈 포트</param>
         public void ListenAndServe(string host, int port) {
             networkService.ListenAndServe(host, port);
-        }
-
-        void OnNewClient(Session session) {
-            session.OnSessionEventListener = this;
         }
 
         ///
@@ -86,7 +82,7 @@ namespace SocketServer {
             return t;
         }
 
-        Task ISessionEventListener.OnPacketDecodeFail(Session session, Exception ex, Memory<byte> buffer) {
+        Task ISessionEventListener.OnPacketDecodeFail(Session session, Exception ex, Slice<byte> buffer) {
             Console.WriteLine(ex);
             CPacket p = new CPacket();
             p.Add(buffer);
@@ -95,6 +91,10 @@ namespace SocketServer {
         }
 
         Task ISessionEventListener.OnSendCompleted(Session session) {
+            return Task.CompletedTask;
+        }
+
+        public Task OnCreate(Session session) {
             return Task.CompletedTask;
         }
     }
