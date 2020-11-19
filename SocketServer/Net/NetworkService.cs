@@ -34,16 +34,20 @@ namespace SocketServer.Net {
             var clientSocket = session.Socket;
             using var networkStream = new NetworkStream(clientSocket);
             var packetReader = new PacketReader(networkStream);
-            while (true) {
-                try {
-                    var p = await packetReader.ReceiveAsync();
-                    if (p == null) {
-                        break;
+            try {
+                while (true) {
+                    try {
+                        var p = await packetReader.ReceiveAsync();
+                        if (p == null) {
+                            break;
+                        }
+                        session.OnPacketReceive(p);
+                    } catch (PacketDecodeFailException e) {
+                        await sessionEventListener.OnPacketDecodeFail(session, e, e.Buffer);
                     }
-                    session.OnPacketReceive(p);
-                } catch(PacketDecodeFailException e) {
-                    await sessionEventListener.OnPacketDecodeFail(session, e, e.Buffer);
                 }
+            } catch (Exception e) {
+                Console.WriteLine(e);
             }
             CloseClient(session);
         }
