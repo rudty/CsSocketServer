@@ -17,12 +17,12 @@ namespace SocketServerTest {
         public void TestEcho() {
             using var server = ServerTestHelper.TestServer;
             using var client = ServerTestHelper.TestClient;
-            server.AddEventListener("hello", (Request req) => {
-                req.Session.Send(CPacket.New.Add("hi"));
+            server.AddEventListener("hello", (Request req, Response res) => {
+                req.Session.Send(CPacket.NewSend.Add("hi"));
                 return Task.CompletedTask;
             });
             client.Send(
-                CPacket.New
+                CPacket.NewSend
                     .Add("hello"));
             var res = client.ReceivePacket();
             var body = res.NextString();
@@ -34,16 +34,16 @@ namespace SocketServerTest {
         public void TestHello() {
             using var server = ServerTestHelper.TestServer;
             using var client = ServerTestHelper.TestClient;
-            server.AddEventListener("hello", (Request req) => {
+            server.AddEventListener("hello", (Request req, Response res) => {
                 Hello h = req.Packet.Next(Hello.Parser);
                 h.Value += 1;
-                req.Session.Send(CPacket.New.Add(h));
+                req.Session.Send(CPacket.NewSend.Add(h));
                 return Task.CompletedTask;
             });
             Hello h = new Hello();
             h.Value = 1;
             client.Send(
-                CPacket.New
+                CPacket.NewSend
                     .Add("hello")
                     .Add(h));
             var res = client.ReceivePacket();

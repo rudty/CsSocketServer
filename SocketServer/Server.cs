@@ -8,19 +8,22 @@ using SocketServer.Net;
 namespace SocketServer {
     public class Server: ISessionEventListener {
 
-        public delegate Task ClientMessageListener(Request request);
+        public delegate Task ClientMessageListener(Request request, Response response);
+        public delegate Task ClientDisconnectListener(Session session);
 
         readonly Dictionary<string, ClientMessageListener> messageListeners = new Dictionary<string, ClientMessageListener>();
 
         readonly NetworkService networkService;
 
-        /// <summary>
-        /// 전체 유저 session
-        /// </summary>
-        readonly Dictionary<string, Session> allSession = new Dictionary<string, Session>();
+        public event ClientDisconnectListener OnClientDisconnect;
 
         public Server() {
             networkService = new NetworkService(this);
+            OnClientDisconnect += EmptyCloseHandler;
+        }
+
+        private static Task EmptyCloseHandler(Session s) {
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -58,10 +61,7 @@ namespace SocketServer {
         /// </summary>
         /// <param name="session"></param>
         Task ISessionEventListener.OnDisconnected(Session session) {
-            lock (allSession) {
-                allSession.Remove(session.SessionID);
-            }
-            return Task.CompletedTask;
+            return OnClientDisconnect(session); 
         }
 
         async Task ProcessUserMessage(Session session, CPacket requestPacket) {
@@ -73,7 +73,13 @@ namespace SocketServer {
             }
 
             if (exists) {
-                await listener(new Request(message, requestPacket, session));
+                using var res = new Response();
+                await listener(new Request(message, requestPacket, session), res);
+
+                var packet = res.Packet;
+                if (false == packet.IsEmpty) {
+                    session.Send(packet);
+                }
             }
         }
 

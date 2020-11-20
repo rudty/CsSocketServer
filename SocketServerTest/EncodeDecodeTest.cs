@@ -63,7 +63,7 @@ namespace SocketServerTest {
 
         [TestMethod]
         public void CheckIntString1() {
-            var p = CPacket.New
+            var p = CPacket.NewSend
                 .Add(value1)
                 .Add(str1)
                 .Add(value2)

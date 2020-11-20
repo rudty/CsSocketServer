@@ -33,7 +33,7 @@ namespace SocketServer.Net {
         async Task DoReceive(Session session) {
             var clientSocket = session.Socket;
             using var networkStream = new NetworkStream(clientSocket);
-            var packetReader = new PacketReader(networkStream);
+            var packetReader = new CPacketStreamReader(networkStream);
             try {
                 while (true) {
                     try {
@@ -56,7 +56,7 @@ namespace SocketServer.Net {
             var pack = p.Packing();
             while (true) {
                 int len = await session.Socket.SendAsync(pack, SocketFlags.None);
-                if (len == pack.Length) {
+                if (len >= pack.Length) {
                     break;
                 }
                 pack = pack.Slice(0, len);

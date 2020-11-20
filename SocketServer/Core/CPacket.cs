@@ -11,11 +11,28 @@ namespace SocketServer.Core {
         public Slice<byte> Buffer { get; internal set; }
         public int Position { get; internal set; } = HEADER_SIZE;
 
-        public static CPacket New {
+        /// <summary>
+        /// CPacket 에 아무것도 들어있지 않은지 
+        /// </summary>
+        public bool IsEmpty {
+            get {
+                return Position == HEADER_SIZE;
+            }
+        } 
+
+        public static CPacket NewSend {
             get {
                 return new CPacket();
             }
         }
+        public static CPacket NewReceive {
+            get {
+                return new CPacket() {
+                    Position = 0,
+                };
+            }
+        }
+
 
         public CPacket() {
             Buffer = SliceMemoryPool.Obtain();

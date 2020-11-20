@@ -1,4 +1,5 @@
 ﻿using SocketServer.Core;
+using System;
 
 namespace SocketServer.Net {
     public class Request {

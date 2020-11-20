@@ -19,10 +19,10 @@ namespace SocketServer.Net.IO {
     /// byte[2] = (byte)(길이 << 8)
     /// byte[3:] 부터는 길이만큼의 내용
     /// </summary>
-    class PacketReader {
+    class CPacketStreamReader {
         readonly Stream stream;
 
-        public PacketReader(Stream stream) {
+        public CPacketStreamReader(Stream stream) {
             this.stream = stream;
         }
 
@@ -65,13 +65,13 @@ namespace SocketServer.Net.IO {
         /// 클라이언트로부터 패킷을 받습니다
         /// length 까지 받으며 받지 못한다면 계속 받기를 시도합니다
         /// </summary>
-        /// <param name="buf">저장할 버퍼</param>
-        /// <param name="position">읽기를 시작할 위치</param>
+        /// <param name="packet">저장할 버퍼</param>
         /// <param name="length">길이</param>
         /// <returns>정상적으로 읽기를 완료하였음</returns>
-        async ValueTask<bool> ReceiveNext(Slice<byte> buf, int position, int length) {
+        async ValueTask<bool> ReceiveNext(CPacket packet, int length) {
+            int position = 0;
             while (position < length) {
-                int len = await stream.ReadAsync(buf.Buffer, buf.Offset + position, length);
+                int len = await packet.ReadFromAsync(stream, length);
                 if (len <= 0) {
                     // 클라이언트에서 연결을 끊었을때
                     return false;
@@ -79,28 +79,10 @@ namespace SocketServer.Net.IO {
 
                 position += len;
             }
-
             return true;
         }
 
-        public async Task<bool> ReceiveAsync(Slice<byte> buf) {
-            if (false == await ReceiveNext(buf, 0, CPacket.HEADER_SIZE)) {
-                return false;
-            }
-
-            // 처음 HEADER를 받을떄 최대 header 까지만 받게
-            // 총 읽을 길이 (메세지 길이 + 헤더 길이)
-            int messageSize = DecodeHeader(buf);
-            messageSize += CPacket.HEADER_SIZE;
-
-
-            if (false == await ReceiveNext(buf, CPacket.HEADER_SIZE, messageSize)) {
-                return false;
-            }
-
-            return true;
-        }
-
+  
         /// <summary>
         /// 클라이언트로부터 패킷을 읽습니다
         /// 패킷은 헤더 + 본문으로 이루어져
@@ -108,16 +90,22 @@ namespace SocketServer.Net.IO {
         /// </summary>
         /// <returns>읽은 완전한 패킷</returns>
         public async Task<CPacket> ReceiveAsync() {
-            Slice<byte> buf = SliceMemoryPool.Obtain();
+            CPacket packet = CPacket.NewReceive;
 
-            if (await ReceiveAsync(buf)) {
-                // ok
-                return new CPacket(buf);
+            if (false == await ReceiveNext(packet, CPacket.HEADER_SIZE)) {
+                return null;
             }
 
-            // fail
-            SliceMemoryPool.Recycle(buf);
-            return null;
+            // 처음 HEADER를 받을떄 최대 header 까지만 받게
+            // 총 읽을 길이 (메세지 길이 + 헤더 길이)
+            int messageSize = DecodeHeader(packet.Buffer);
+
+
+            if (false == await ReceiveNext(packet, messageSize)) {
+                return null;
+            }
+
+            return packet;
         }
     }
 }
