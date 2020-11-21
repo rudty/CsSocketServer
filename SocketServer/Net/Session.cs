@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 using SocketServer.Core;
 using SocketServer.TaskRunner;
@@ -9,7 +10,9 @@ namespace SocketServer.Net {
     /// 접속 1 소켓 당 1개 생성하는 세션 관리 객체
     /// 
     /// </summary>
-    public class Session {
+    public class Session: IDisposable {
+
+        internal Stream ClientStream;
 
         internal Socket Socket { get; private set; }
 
@@ -35,6 +38,7 @@ namespace SocketServer.Net {
             this.Socket = socket;
             this.NetworkService = networkService;
             this.sessionEventListener = sessionEventListener;
+            ClientStream = new NetworkStream(socket);
         }
 
         public void OnPacketReceive(CPacket message) {
@@ -56,6 +60,16 @@ namespace SocketServer.Net {
                     NetworkService.Send(this, p);
                 }
             });
+        }
+
+        public void Dispose() {
+            try {
+                Socket.Shutdown(SocketShutdown.Send);
+            } catch {
+
+            }
+            ClientStream.Close();
+            Socket.Close();
         }
     }
 }

@@ -52,7 +52,7 @@ namespace SocketServerTest {
 
         List<EventListener> eventListeners = new List<EventListener>();
         public ServerWrapper AddEventListener(string k, Server.ClientMessageListener l) {
-            server.AddEventListener(k, l);
+            server.AddMessageHandler(k, l);
             eventListeners.Add(new EventListener(k, l));
             return this;
         }

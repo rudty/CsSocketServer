@@ -6,7 +6,7 @@ namespace SessionServer {
     class Program {
 
         static void Main(string[] args) {
-            new SessionServer();
+            new SessionRouter();
         }
     }
 }

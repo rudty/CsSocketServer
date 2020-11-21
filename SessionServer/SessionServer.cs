@@ -8,12 +8,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SessionServer {
-    public class SessionServer {
+    public class SessionRouter {
         Server server = new Server();
-        ConcurrentDictionary<string, Session> allSessions = new ConcurrentDictionary<string, Session>();
+        //ConcurrentDictionary<string, Session> allSessions = new ConcurrentDictionary<string, Session>();
 
-        public SessionServer() {
-            server.AddEventListener("hello", HelloRequest);
+        public SessionRouter() {
+            server.Boot(this);
             server.OnClientDisconnect += OnClientDisconnect;
         }
 
@@ -21,10 +21,16 @@ namespace SessionServer {
             return Task.CompletedTask;
         }
 
-        Task HelloRequest(Request req, Response res) {
+        [MessageHandler("hello")]
+        public Task HelloRequest(Request req, Response res) {
             Hello h = req.Packet.Next(Hello.Parser);
-            h.Value += 1;
+            h.Value *= 2;
+            res.Packet.Add(h);
             return Task.CompletedTask;
+        }
+
+        public void ListenAndServe(string host, int port) {
+            server.ListenAndServe(host, port);
         }
     }
 }

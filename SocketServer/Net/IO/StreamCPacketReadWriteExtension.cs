@@ -2,12 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SocketServer.Net.IO {
-    public static class CPacketReadExtension {
+    public static class StreamCPacketReadWriteExtension {
         /// <summary>
         /// Stream 으로부터 length 만큼 읽어 packet 에 저장합니다
         /// stream 의 상황에 따라 length 와 실제로 읽은 수가 일치하지는 않을 수도 있습니다 
@@ -16,15 +17,27 @@ namespace SocketServer.Net.IO {
         /// <param name="stream">데이터를 읽을 stream</param>
         /// <param name="length">길이</param>
         /// <returns></returns>
-        public static async Task<int> ReadFromAsync(this CPacket packet, Stream stream, int length) {
+        public static async ValueTask<int> ReadAsync(this Stream stream, CPacket packet, int length) {
             var s = packet.Buffer;
             int position = packet.Position;
             if (position + length > s.Length) {
                 throw new CPacketOverflowException($"position + length > buffer.length {position + length} > {s.Length}");
             }
-            int len = await stream.ReadAsync(s.Buffer, s.Offset, length);
+            int len = await stream.ReadAsync(s.Buffer, s.Offset + position, length);
             packet.Position += len;
             return len;
+        }
+
+        /// <summary>
+        /// Stream CPacket 추가
+        /// </summary>
+        /// <param name="stream">데이터를 쓸 Stream</param>
+        /// <param name="packet">보낼 패킷</param>
+        /// <returns></returns>
+        public static Task WriteAsync(this Stream stream, CPacket packet) {
+            var s = packet.Buffer;
+            int position = packet.Position;
+            return stream.WriteAsync(s.Buffer, s.Offset, position);
 
         }
     }

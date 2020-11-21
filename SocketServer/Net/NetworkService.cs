@@ -19,6 +19,7 @@ namespace SocketServer.Net {
         }
 
         void OnNewClient(Socket client) {
+            client.Blocking = false;
             Session session = new Session(client, this, sessionEventListener); 
             Task.Run(async () => {
                 await sessionEventListener.OnCreate(session);
@@ -31,9 +32,7 @@ namespace SocketServer.Net {
         /// </summary>
         /// <param name="session">계속 입력을 받을 세션</param>
         async Task DoReceive(Session session) {
-            var clientSocket = session.Socket;
-            using var networkStream = new NetworkStream(clientSocket);
-            var packetReader = new CPacketStreamReader(networkStream);
+            var packetReader = new CPacketStreamReader(session.ClientStream);
             try {
                 while (true) {
                     try {
@@ -53,25 +52,16 @@ namespace SocketServer.Net {
         }
 
         internal async void Send(Session session, CPacket p) {
-            var pack = p.Packing();
-            while (true) {
-                int len = await session.Socket.SendAsync(pack, SocketFlags.None);
-                if (len >= pack.Length) {
-                    break;
-                }
-                pack = pack.Slice(0, len);
+            try {
+                await session.ClientStream.WriteAsync(p);
+             } catch (Exception e) {
+                Console.WriteLine(e);
             }
         }
 
         public void CloseClient(Session session) {
             session.OnRemoved();
-
-            try {
-                session.Socket.Shutdown(SocketShutdown.Send);
-            } catch {
-
-            }
-            session.Socket.Close();
+            session.Dispose();
         }
 
         public void ListenAndServe(string host, int port) {

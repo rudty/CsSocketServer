@@ -70,14 +70,16 @@ namespace SocketServer.Net.IO {
         /// <returns>정상적으로 읽기를 완료하였음</returns>
         async ValueTask<bool> ReceiveNext(CPacket packet, int length) {
             int position = 0;
+            int readLength = length;
             while (position < length) {
-                int len = await packet.ReadFromAsync(stream, length);
+                int len = await stream.ReadAsync(packet, readLength);
                 if (len <= 0) {
                     // 클라이언트에서 연결을 끊었을때
                     return false;
                 }
 
                 position += len;
+                readLength -= len;
             }
             return true;
         }
@@ -105,6 +107,7 @@ namespace SocketServer.Net.IO {
                 return null;
             }
 
+            packet.Position = CPacket.HEADER_SIZE;
             return packet;
         }
     }

@@ -93,7 +93,7 @@ namespace SocketServer.Core {
             if (count > Length) {
                 throw new ArgumentException($"AsMemory() count > slice.length count:{count}, slice.length:{Length}");
             }
-            return Buffer.AsMemory(Offset + start, Length);
+            return Buffer.AsMemory(Offset + start, count);
         }
     }
 }

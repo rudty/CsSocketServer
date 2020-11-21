@@ -11,13 +11,16 @@ namespace SocketServer.Core {
 
         public static Slice<byte> Obtain() {
             const int bufSize = CPacket.MESSAGE_BUFFER_SIZE;
-            const int bufCount = ALLOCATE_BUFFER_COUNT;
+            //const int bufCount = ALLOCATE_BUFFER_COUNT;
 
             lock (mutex) {
                 if (pool.Count == 0) {
-                    var newBuffer = new byte[bufSize * bufCount];
-                    for (int i = 0; i < bufSize * bufCount; i += bufSize) {
-                        pool.Push(new Slice<byte>(newBuffer, i, bufSize));
+                    //var newBuffer = new byte[bufSize * bufCount];
+                    //for (int i = 0; i < bufSize * bufCount; i += bufSize) {
+                    //    pool.Push(new Slice<byte>(newBuffer, i, bufSize));
+                    //}
+                    for (int i = 0; i < 10; ++i) {
+                        pool.Push(new Slice<byte>(new byte[bufSize]));
                     }
                 }
                 return pool.Pop();
