@@ -45,7 +45,7 @@ namespace SocketServer.Net {
             sessionTaskExecutor.Add(() => sessionEventListener.OnPacketReceived(this, message));
         }
 
-        public void OnPacketDecodeFail(Exception ex, Slice<byte> buffer) {
+        public void OnPacketDecodeFail(Exception ex, byte[] buffer) {
             sessionTaskExecutor.Add(() => sessionEventListener.OnPacketDecodeFail(this, ex, buffer));
         }
 

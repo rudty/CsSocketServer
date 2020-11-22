@@ -8,7 +8,7 @@ namespace SocketServer.Net {
         Task OnCreate(Session session);
         Task OnPacketReceived(Session session, CPacket buffer);
 
-        Task OnPacketDecodeFail(Session session, Exception ex, Slice<byte> buffer);
+        Task OnPacketDecodeFail(Session session, Exception ex, byte[] buffer);
 
         Task OnDisconnected(Session session);
         Task OnSendCompleted(Session session);

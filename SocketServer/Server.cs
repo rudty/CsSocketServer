@@ -79,7 +79,8 @@ namespace SocketServer {
 
             if (exists) {
                 using var res = new Response();
-                await listener(new Request(message, requestPacket, session), res);
+                using var req = new Request(message, requestPacket, session);
+                await listener(req, res);
 
                 var packet = res.Packet;
                 if (false == packet.IsEmpty) {
@@ -93,7 +94,7 @@ namespace SocketServer {
             return t;
         }
 
-        Task ISessionEventListener.OnPacketDecodeFail(Session session, Exception ex, Slice<byte> buffer) {
+        Task ISessionEventListener.OnPacketDecodeFail(Session session, Exception ex, byte[] buffer) {
             Console.WriteLine(ex);
             CPacket p = new CPacket();
             p.Add(buffer);

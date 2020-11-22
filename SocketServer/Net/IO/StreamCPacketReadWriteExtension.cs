@@ -1,10 +1,5 @@
 ﻿using SocketServer.Core;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net.Sockets;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SocketServer.Net.IO {
@@ -23,7 +18,7 @@ namespace SocketServer.Net.IO {
             if (position + length > s.Length) {
                 throw new CPacketOverflowException($"position + length > buffer.length {position + length} > {s.Length}");
             }
-            int len = await stream.ReadAsync(s.Buffer, s.Offset + position, length);
+            int len = await stream.ReadAsync(s, position, length);
             packet.Position += len;
             return len;
         }
@@ -37,7 +32,7 @@ namespace SocketServer.Net.IO {
         public static Task WriteAsync(this Stream stream, CPacket packet) {
             var s = packet.Buffer;
             int position = packet.Position;
-            return stream.WriteAsync(s.Buffer, s.Offset, position);
+            return stream.WriteAsync(s, 0, position);
 
         }
     }

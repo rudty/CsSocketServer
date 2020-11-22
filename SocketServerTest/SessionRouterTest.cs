@@ -15,7 +15,7 @@ namespace SolutionTest {
     [TestClass]
     public class SessionRouterTest {
 
-        //[Timeout(6000)]
+        [Timeout(6000)]
         [TestMethod]
         public void TestEcho() {
             Random r = new Random();
@@ -35,9 +35,7 @@ namespace SolutionTest {
             var receive = client.ReceivePacket();
 
             var resHello = receive.Next(Hello.Parser);
-            Console.WriteLine(resHello.Value);
-
-
+            Assert.IsTrue(resHello.Value == 16);
         }
     }
 }

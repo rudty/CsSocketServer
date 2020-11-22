@@ -44,19 +44,7 @@ namespace SocketServer.Net.IO {
         }
 
         public static CPacket Add(this CPacket p, byte[] data) {
-            p.Add(data, 0, data.Length);
-            return p;
-        }
-
-        public static CPacket Add(this CPacket p, Memory<byte> data) {
-            data.CopyTo(p.Buffer.AsMemory());
-            return p;
-        }
-
-        public static CPacket Add(this CPacket p, Slice<byte> data) {
-            var b = p.Buffer;
-            Array.Copy(data.Buffer, data.Offset, b.Buffer, b.Offset + p.Position, data.Length);
-            return p;
+            return Add(p, data, 0, data.Length);
         }
 
         private static void ThrowIfOverFlow(CPacket p, int addSize) {
@@ -67,10 +55,8 @@ namespace SocketServer.Net.IO {
         }
 
         public static CPacket Add(this CPacket p, byte[] data, int offset, int size) {
-            ThrowIfOverFlow(p, size);
-
             var b = p.Buffer;
-            Array.Copy(data, offset, b.Buffer, b.Offset + p.Position, size);
+            Array.Copy(data, offset, b, p.Position, size);
             p.Position += size;
             return p;
         }
@@ -84,7 +70,7 @@ namespace SocketServer.Net.IO {
             byte[] byteString = Encoding.UTF8.GetBytes(s);
             ThrowIfOverFlow(p, byteString.Length);
 
-            Array.Copy(byteString, 0, b.Buffer, b.Offset + p.Position, byteString.Length);
+            Array.Copy(byteString, 0, b, p.Position, byteString.Length);
             p.Position += byteString.Length;
             return p;
         }
@@ -93,7 +79,7 @@ namespace SocketServer.Net.IO {
             var len = (Int16)m.CalculateSize();
             p.Add(len);
             var s = p.Buffer;
-            var span = s.Buffer.AsSpan(s.Offset + p.Position, len);
+            var span = s.AsSpan(p.Position, len);
             m.WriteTo(span);
             p.Position += len;
             return p;

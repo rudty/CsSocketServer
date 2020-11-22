@@ -8,7 +8,7 @@ namespace SocketServer.Core {
         public const int HEADER_SIZE = 3;
         public const int MESSAGE_BUFFER_SIZE = 1024;
 
-        public Slice<byte> Buffer { get; internal set; }
+        public byte[] Buffer { get; internal set; }
         public int Position { get; internal set; } = HEADER_SIZE;
 
         /// <summary>
@@ -35,16 +35,7 @@ namespace SocketServer.Core {
 
 
         public CPacket() {
-            Buffer = SliceMemoryPool.Obtain();
-        }
-
-        /// <summary>
-        /// 가지고 있는 byte로 CPacket를 초기화합니다
-        /// 인자로 받은 b는 반드시 CPacketBufferManager 에서 꺼내온 것이어야 합니다.
-        /// </summary>
-        /// <param name="b">CPacketBufferManager 로부터 할당 받은 메모리</param>
-        public CPacket(Slice<byte> b) {
-            this.Buffer = b;
+            Buffer = CPacketMemoryPool.Obtain();
         }
     
         ~CPacket() {
@@ -52,14 +43,14 @@ namespace SocketServer.Core {
         }
 
         public void Recycle() {
-            if (!Buffer.IsEmpty) {
-                SliceMemoryPool.Recycle(Buffer);
+            if (Buffer != null) {
+                CPacketMemoryPool.Recycle(Buffer);
                 Buffer = null;
             }
         }
 
         public Memory<byte> Packing() {
-            Slice<byte> b = Buffer;
+            var b = Buffer;
             var dataLength = Position - HEADER_SIZE;
 
             b[0] = PACKET_BEGIN;

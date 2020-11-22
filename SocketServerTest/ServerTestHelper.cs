@@ -24,9 +24,9 @@ namespace SocketServerTest {
         }
 
         public CPacket ReceivePacket() {
-            var b = SliceMemoryPool.Obtain();
-            int len = client.Client.Receive(b.Buffer, b.Offset, b.Length, SocketFlags.None);
-            return new CPacket(b);
+            var p = CPacket.NewReceive;
+            int len = client.Client.Receive(p.Buffer, 0, p.Buffer.Length, SocketFlags.None);
+            return p;
         }
 
         void IDisposable.Dispose() {

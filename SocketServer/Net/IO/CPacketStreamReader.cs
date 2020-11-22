@@ -32,13 +32,15 @@ namespace SocketServer.Net.IO {
         /// </summary>
         /// <param name="buffer">첫 읽은 4바이트 이상의 버퍼</param>
         /// <returns>메세지의 길이</returns>
-        int DecodeHeader(Slice<byte> buffer) {
+        int DecodeHeader(byte[] buffer) {
             const int maxPacketSize = CPacket.MESSAGE_BUFFER_SIZE - CPacket.HEADER_SIZE;
 
             if (buffer[0] != CPacket.PACKET_BEGIN) {
                 throw new PacketDecodeFailException(
-                    new Slice<byte>(buffer, buffer.Offset, CPacket.HEADER_SIZE), 
-                    $"packet header[0] error {buffer[0]}");
+                    buffer,
+                    0,
+                    CPacket.HEADER_SIZE,
+                $"packet header[0] error {buffer[0]}"); ;
             }
 
             int len = 0;
@@ -47,13 +49,17 @@ namespace SocketServer.Net.IO {
 
             if (len <= 0) {
                 throw new PacketDecodeFailException(
-                    new Slice<byte>(buffer, buffer.Offset, CPacket.HEADER_SIZE), 
+                     buffer,
+                    0,
+                    CPacket.HEADER_SIZE,
                     $"packet length error {len}");
             }
 
             if (len > maxPacketSize) {
                 throw new PacketDecodeFailException(
-                    new Slice<byte>(buffer, buffer.Offset, CPacket.HEADER_SIZE), 
+                    buffer,
+                    0,
+                    CPacket.HEADER_SIZE,
                     $"message size({ len }) > messageBuffer size({ maxPacketSize })");
             }
 
@@ -84,7 +90,7 @@ namespace SocketServer.Net.IO {
             return true;
         }
 
-  
+
         /// <summary>
         /// 클라이언트로부터 패킷을 읽습니다
         /// 패킷은 헤더 + 본문으로 이루어져

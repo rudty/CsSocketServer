@@ -19,7 +19,6 @@ namespace SocketServer.Net {
         }
 
         void OnNewClient(Socket client) {
-            client.Blocking = false;
             Session session = new Session(client, this, sessionEventListener); 
             Task.Run(async () => {
                 await sessionEventListener.OnCreate(session);
@@ -33,7 +32,6 @@ namespace SocketServer.Net {
         /// <param name="session">계속 입력을 받을 세션</param>
         async Task DoReceive(Session session) {
             var packetReader = new CPacketStreamReader(session.ClientStream);
-            try {
                 while (true) {
                     try {
                         var p = await packetReader.ReceiveAsync();
@@ -43,12 +41,12 @@ namespace SocketServer.Net {
                         session.OnPacketReceive(p);
                     } catch (PacketDecodeFailException e) {
                         await sessionEventListener.OnPacketDecodeFail(session, e, e.Buffer);
+                    } catch (Exception e) {
+                        Console.WriteLine(e);
+                        break;
                     }
                 }
-            } catch (Exception e) {
-                Console.WriteLine(e);
-            }
-            CloseClient(session);
+              CloseClient(session);
         }
 
         internal async void Send(Session session, CPacket p) {

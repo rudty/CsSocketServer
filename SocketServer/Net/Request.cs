@@ -2,7 +2,7 @@
 using System;
 
 namespace SocketServer.Net {
-    public class Request {
+    public class Request: IDisposable {
 
         /// <summary>
         /// 클라이언트에서 요청한 패킷의 타입 메세지
@@ -23,6 +23,10 @@ namespace SocketServer.Net {
             Message = message;
             Packet = requestPacket;
             Session = session;
+        }
+
+        void IDisposable.Dispose() {
+            Packet.Recycle();
         }
     }
 }

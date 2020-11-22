@@ -47,7 +47,7 @@ namespace SocketServer.Net.IO {
             var s = p.Buffer;
   
             int offset = p.Position;
-            string r = Encoding.UTF8.GetString(s.Buffer, s.Offset + offset, len);
+            string r = Encoding.UTF8.GetString(s, offset, len);
             offset += len;
 
             p.Position = offset;
@@ -57,7 +57,9 @@ namespace SocketServer.Net.IO {
         public static T Next<T>(this CPacket p, Google.Protobuf.MessageParser<T> parser) where T: Google.Protobuf.IMessage<T> {
             int len = p.NextShort();
             var s = p.Buffer;
-            return parser.ParseFrom(s.Buffer, s.Offset + p.Position, len);
+            var m = parser.ParseFrom(s, p.Position, len);
+            p.Position += len;
+            return m;
         }
      }
 }

@@ -5,10 +5,11 @@ using System.Text;
 
 namespace SocketServer.Net {
     class PacketDecodeFailException: Exception {
-        public Slice<byte> Buffer;
+        public byte[] Buffer;
 
-        public PacketDecodeFailException(Slice<byte> buffer, string what): base(what) {
-            Buffer = buffer;
+        public PacketDecodeFailException(byte[] buffer, int offset, int length, string what): base(what) {
+            Buffer = new byte[buffer.Length];
+            Array.Copy(buffer, offset, this.Buffer, offset, length);
         }
     }
 }
