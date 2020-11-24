@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Collections.Generic;
 using SocketServer.Core;
 using Google.Protobuf;
+using SocketServer.Net.IO;
 
 namespace SocketServerTest {
     public class LocalTestClient: IDisposable{
@@ -19,12 +20,12 @@ namespace SocketServerTest {
         }
 
         public void Send(CPacket p) {
-            var pack = p.Packing();
-            client.Client.Send(pack.Span, SocketFlags.None);
+            p.Sealed();
+            client.Client.Send(p.Buffer, 0, p.Position, SocketFlags.None);
         }
 
         public CPacket ReceivePacket() {
-            var p = CPacket.NewReceive;
+            var p = CPacket.NewSend;
             int len = client.Client.Receive(p.Buffer, 0, p.Buffer.Length, SocketFlags.None);
             return p;
         }

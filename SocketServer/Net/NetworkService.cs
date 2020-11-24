@@ -8,8 +8,9 @@ namespace SocketServer.Net {
     /// <summary>
     /// Receive/Send 클래스
     /// </summary>
-    public class NetworkService {
-        private ISessionEventListener sessionEventListener;
+    public class NetworkService: IDisposable {
+        private readonly ISessionEventListener sessionEventListener;
+        private Listener listener = new Listener();
 
         public NetworkService(ISessionEventListener sessionEventListener) {
             if (sessionEventListener == null) {
@@ -40,21 +41,24 @@ namespace SocketServer.Net {
                         }
                         session.OnPacketReceive(p);
                     } catch (PacketDecodeFailException e) {
-                        await sessionEventListener.OnPacketDecodeFail(session, e, e.Buffer);
+                        session.OnPacketDecodeFail(e, e.Buffer);
+                        break;
                     } catch (Exception e) {
                         Console.WriteLine(e);
                         break;
                     }
-                }
+              }
               CloseClient(session);
         }
 
-        internal async void Send(Session session, CPacket p) {
+        internal Task Send(Session session, CPacket p) {
             try {
-                await session.ClientStream.WriteAsync(p);
+                p.Sealed();
+                return session.ClientStream.WriteAsync(p);
              } catch (Exception e) {
                 Console.WriteLine(e);
             }
+            return Task.CompletedTask;
         }
 
         public void CloseClient(Session session) {
@@ -63,9 +67,12 @@ namespace SocketServer.Net {
         }
 
         public void ListenAndServe(string host, int port) {
-            var listener = new Listener();
             listener.OnNewClient += OnNewClient;
             listener.Start(host, port);
+        }
+
+        public void Dispose() {
+            listener.OnNewClient -= OnNewClient;
         }
     }
 }

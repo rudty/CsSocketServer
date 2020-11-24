@@ -27,6 +27,8 @@ namespace SocketServer.Net {
 
         void IDisposable.Dispose() {
             Packet.Recycle();
+            Session = null;
+            Packet = null;
         }
     }
 }

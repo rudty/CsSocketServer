@@ -11,6 +11,6 @@ namespace SocketServer.Net {
         Task OnPacketDecodeFail(Session session, Exception ex, byte[] buffer);
 
         Task OnDisconnected(Session session);
-        Task OnSendCompleted(Session session);
+        Task OnSendCompleted(Session session, CPacket p);
     }
 }

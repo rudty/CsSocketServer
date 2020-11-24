@@ -16,7 +16,7 @@ namespace SocketServer.Core {
         /// </summary>
         public bool IsEmpty {
             get {
-                return Position == HEADER_SIZE;
+                return Position <= HEADER_SIZE;
             }
         } 
 
@@ -49,15 +49,13 @@ namespace SocketServer.Core {
             }
         }
 
-        public Memory<byte> Packing() {
+        public void Sealed() {
             var b = Buffer;
             var dataLength = Position - HEADER_SIZE;
 
             b[0] = PACKET_BEGIN;
             b[1] = (byte)(dataLength);
             b[2] = (byte)(dataLength >> 8);
-
-            return Buffer.AsMemory(0, Position);
         }
 
         public void MoveToFirst() {

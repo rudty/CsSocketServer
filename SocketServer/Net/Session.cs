@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using SocketServer.Core;
 using SocketServer.TaskRunner;
 
@@ -55,10 +56,11 @@ namespace SocketServer.Net {
         }
 
         public void Send(CPacket p) {
-            sendExecutor.Add(() => {
+            sendExecutor.Add(async () => {
                 if (online) {
-                    NetworkService.Send(this, p);
+                    await NetworkService.Send(this, p);
                 }
+                await sessionEventListener.OnSendCompleted(this, p);
             });
         }
 

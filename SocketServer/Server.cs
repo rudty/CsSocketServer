@@ -7,7 +7,7 @@ using SocketServer.Net;
 using System.Reflection;
 
 namespace SocketServer {
-    public class Server: ISessionEventListener {
+    public class Server: ISessionEventListener, IDisposable {
 
         public delegate Task ClientMessageListener(Request request, Response response);
         public delegate Task ClientDisconnectListener(Session session);
@@ -16,16 +16,24 @@ namespace SocketServer {
 
         readonly NetworkService networkService;
 
+        public event ClientMessageListener OnBeforeIntercepter;
         public event ClientDisconnectListener OnClientDisconnect;
+        public event ClientMessageListener OnAfterIntercepter;
 
         public Server() {
             networkService = new NetworkService(this);
             OnClientDisconnect += EmptyCloseHandler;
+            OnBeforeIntercepter += EmptyInterceptor;
+            OnAfterIntercepter += EmptyInterceptor;
         }
 
         private static Task EmptyCloseHandler(Session s) {
             return Task.CompletedTask;
         }
+
+        private static Task EmptyInterceptor(Request request, Response response) {
+            return Task.CompletedTask;
+        } 
 
         /// <summary>
         /// 소켓 서버를 구동시킵니다
@@ -78,14 +86,11 @@ namespace SocketServer {
             }
 
             if (exists) {
-                using var res = new Response();
                 using var req = new Request(message, requestPacket, session);
+                using var res = new Response(session);
                 await listener(req, res);
-
-                var packet = res.Packet;
-                if (false == packet.IsEmpty) {
-                    session.Send(packet);
-                }
+                
+                res.Send();
             }
         }
 
@@ -102,7 +107,8 @@ namespace SocketServer {
             return Task.CompletedTask;
         }
 
-        Task ISessionEventListener.OnSendCompleted(Session session) {
+        Task ISessionEventListener.OnSendCompleted(Session session, CPacket p) {
+            p.Recycle();
             return Task.CompletedTask;
         }
 
@@ -128,6 +134,13 @@ namespace SocketServer {
                     }
                 }
             }
+        }
+
+        void IDisposable.Dispose() {
+            OnClientDisconnect = null;
+            OnBeforeIntercepter = null;
+            OnAfterIntercepter = null;
+            networkService.Dispose();
         }
     }
 }

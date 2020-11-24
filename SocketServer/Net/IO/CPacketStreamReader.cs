@@ -49,7 +49,7 @@ namespace SocketServer.Net.IO {
 
             if (len <= 0) {
                 throw new PacketDecodeFailException(
-                     buffer,
+                    buffer,
                     0,
                     CPacket.HEADER_SIZE,
                     $"packet length error {len}");

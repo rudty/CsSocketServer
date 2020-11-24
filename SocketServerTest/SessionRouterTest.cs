@@ -21,6 +21,7 @@ namespace SolutionTest {
             Random r = new Random();
             int port = r.Next(20000, 30000);
             var server = new SessionRouter();
+            //server.ListenAndServe("127.0.0.1", port);
             Task.Run(() => server.ListenAndServe("127.0.0.1", port));
             Thread.Sleep(1000);
             var client = new LocalTestClient(port);
@@ -35,7 +36,7 @@ namespace SolutionTest {
             var receive = client.ReceivePacket();
 
             var resHello = receive.Next(Hello.Parser);
-            Assert.IsTrue(resHello.Value == 16);
+            Assert.AreEqual(resHello.Value, 16);
         }
     }
 }

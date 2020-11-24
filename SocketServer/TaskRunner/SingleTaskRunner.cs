@@ -8,7 +8,7 @@ namespace SocketServer.TaskRunner {
     public class SingleTaskRunner {
         int work = 0;
         readonly BlockingCollection<Func<System.Threading.Tasks.Task>> actions = new BlockingCollection<Func<System.Threading.Tasks.Task>>();
-        System.Threading.Tasks.Task runTask = null;
+        Task runTask = null;
 
         async void DoTask() {
             Func<System.Threading.Tasks.Task> fn;
@@ -25,23 +25,23 @@ namespace SocketServer.TaskRunner {
         public void Add(Action fn) {
             Add(() => {
                 fn();
-                return System.Threading.Tasks.Task.CompletedTask;
+                return Task.CompletedTask;
             });
         }
 
-        public void Add(Func<System.Threading.Tasks.Task> fn) {
+        public void Add(Func<Task> fn) {
             actions.Add(fn);
             if (Interlocked.Increment(ref work) == 1) {
-                runTask = System.Threading.Tasks.Task.Run(DoTask);
+                runTask = Task.Run(DoTask);
             }
         }
 
         /// <summary>
         /// 현재 큐에 들어간 모든 함수가 실행이 끝날때까지 기다립니다
         /// </summary>
-        public System.Threading.Tasks.Task Wait() {
+        public Task Wait() {
             if (runTask == null) {
-                return System.Threading.Tasks.Task.CompletedTask;
+                return Task.CompletedTask;
             }
             return runTask;
         }
