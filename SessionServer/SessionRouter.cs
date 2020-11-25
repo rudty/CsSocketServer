@@ -6,20 +6,11 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text;
 using System.Threading.Tasks;
+using Google.Protobuf;
 
 namespace SessionServer {
-    public class SessionRouter {
-        Server server = new Server();
+    public class SessionRouter: RouterBase {
         //ConcurrentDictionary<string, Session> allSessions = new ConcurrentDictionary<string, Session>();
-
-        public SessionRouter() {
-            server.Boot(this);
-            server.OnClientDisconnect += OnClientDisconnect;
-        }
-
-        private Task OnClientDisconnect(Session session) {
-            return Task.CompletedTask;
-        }
 
         [MessageHandler("hello")]
         public Task HelloRequest(Request req, Response res) {
@@ -27,10 +18,6 @@ namespace SessionServer {
             h.Value *= 2;
             res.Packet.Add(h);
             return Task.CompletedTask;
-        }
-
-        public void ListenAndServe(string host, int port) {
-            server.ListenAndServe(host, port);
         }
     }
 }

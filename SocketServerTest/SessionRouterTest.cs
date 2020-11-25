@@ -20,9 +20,8 @@ namespace SolutionTest {
         public void TestEcho() {
             Random r = new Random();
             int port = r.Next(20000, 30000);
-            var server = new SessionRouter();
-            //server.ListenAndServe("127.0.0.1", port);
-            Task.Run(() => server.ListenAndServe("127.0.0.1", port));
+            var router = new SessionRouter();
+
             Thread.Sleep(1000);
             var client = new LocalTestClient(port);
 

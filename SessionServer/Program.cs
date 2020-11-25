@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using SocketServer;
 using SocketServer.Net;
 using SocketServer.Net.IO;
@@ -7,6 +8,7 @@ namespace SessionServer {
 
         static void Main(string[] args) {
             new SessionRouter();
+            Console.ReadLine();
         }
     }
 }
