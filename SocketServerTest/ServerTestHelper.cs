@@ -30,7 +30,8 @@ namespace SocketServerTest {
             return p;
         }
 
-        void IDisposable.Dispose() {
+        public void Dispose() {
+            client.Close();
         }
     }
 

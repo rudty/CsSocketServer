@@ -13,21 +13,14 @@ using SocketServerTest;
 
 namespace SolutionTest {
     [TestClass]
-    public class SessionRouterTest {
+    public class SessionRouterTest: SessionRouterTestHelper  {
 
         [Timeout(6000)]
         [TestMethod]
         public void TestEcho() {
-            Random r = new Random();
-            int port = r.Next(20000, 30000);
-            var router = new SessionRouter();
-
-            Thread.Sleep(1000);
-            var client = new LocalTestClient(port);
-
             Hello h = new Hello();
             h.Value = 8;
-            client.Send(CPacket.NewSend
+            Client.Send(CPacket.NewSend
                             .Add("hello")
                             .Add(h));
 
