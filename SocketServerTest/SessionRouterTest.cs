@@ -23,9 +23,7 @@ namespace SolutionTest {
             Client.Send(CPacket.NewSend
                             .Add("hello")
                             .Add(h));
-
-
-            var receive = client.ReceivePacket();
+            var receive = Client.ReceivePacket();
 
             var resHello = receive.Next(Hello.Parser);
             Assert.AreEqual(resHello.Value, 16);
