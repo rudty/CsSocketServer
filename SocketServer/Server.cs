@@ -87,7 +87,7 @@ namespace SocketServer {
 
             if (exists) {
                 using var req = new Request(message, requestPacket, session);
-                using var res = new Response(session);
+                using var res = new Response(message, session);
                 await listener(req, res);
                 
                 res.Send();
